@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>de.cebitec.gpms</groupId>
+    <artifactId>GPMS</artifactId>
+    <version>1.0-RELEASE</version>
+    <packaging>pom</packaging>
+    <name>GPMS Java API</name>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <modules>
+        <module>GPMS-core-api</module>
+        <module>GPMS-db-api</module>
+        <module>GPMS-rest-api</module>
+    </modules>
+
+    <distributionManagement>
+        <repository>
+            <id>artifactory</id>
+            <name>local-libs-release</name>
+            <url>http://${artifactory.host}/artifactory/libs-release-local</url>
+        </repository>
+        <snapshotRepository>
+            <id>artifactory</id>
+            <name>local-libs-snapshot</name>
+            <url>http://${artifactory.host}/artifactory/libs-snapshot-local</url>
+        </snapshotRepository>
+    </distributionManagement>
+</project>

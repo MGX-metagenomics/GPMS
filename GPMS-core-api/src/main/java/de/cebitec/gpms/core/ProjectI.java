@@ -9,4 +9,7 @@ public interface ProjectI {
     public String getName();
 
     public ProjectClassI getProjectClass();
+    
+    public boolean isPublic();
+    
 }

@@ -20,4 +20,6 @@ public interface DBMasterI extends MasterI {
     public void setLogin(String login);
 
     public String getLogin();
+    
+    public void log(String message);
 }

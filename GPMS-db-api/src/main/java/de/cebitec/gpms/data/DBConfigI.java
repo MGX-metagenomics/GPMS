@@ -9,6 +9,8 @@ public interface DBConfigI {
     public String getURI();
 
     public String getDatabaseHost();
+    
+    public int getDatabasePort();
 
     public String getDatabaseName();
 }

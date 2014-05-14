@@ -2,7 +2,7 @@ package de.cebitec.gpms.rest;
 
 import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
-import java.util.List;
+import java.util.Iterator;
 
 /**
  *
@@ -12,14 +12,14 @@ public interface GPMSClientI {
 
     public String getBaseURI();
 
-    public List<ProjectClassI> getProjectClasses();
+    public Iterator<ProjectClassI> getProjectClasses();
 
     RESTMasterI createMaster(MembershipI m);
 
-    List<MembershipI> getMemberships();
+    Iterator<MembershipI> getMemberships();
 
     boolean login(String user, String password);
 
     void logout();
-
+    
 }

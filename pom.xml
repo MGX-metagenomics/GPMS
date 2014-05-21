@@ -7,7 +7,7 @@
     <packaging>pom</packaging>
     <name>GPMS Java API</name>
     <build>
-        <plugins>
+        <plugins>   
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -23,6 +23,7 @@
         <module>GPMS-core-api</module>
         <module>GPMS-db-api</module>
         <module>GPMS-rest-api</module>
+        <module>GPMS-DTO</module>
     </modules>
 
     <distributionManagement>

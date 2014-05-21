@@ -1,0 +1,50 @@
+package DTO;
+
+option java_package = "de.cebitec.gpms.dto";
+option java_outer_classname = "impl";
+option optimize_for = SPEED;
+
+// GPMS
+
+message GPMSString {
+  required string value = 1;
+}
+
+message GPMSLong {
+  required uint64 value = 1;
+}
+
+message RoleDTO {
+  required string name = 1;
+}
+
+message RoleDTOList {
+  repeated RoleDTO role = 1;
+}
+
+message ProjectClassDTO {
+  required string name = 1;
+  required RoleDTOList roles = 2;
+}
+
+message ProjectClassDTOList {
+  repeated ProjectClassDTO projectclass = 1;
+}
+
+message ProjectDTO {
+  required string name = 1;
+  required ProjectClassDTO project_class = 2;
+}
+
+message ProjectDTOList {
+  repeated ProjectDTO project = 1;
+}
+
+message MembershipDTO {
+  required ProjectDTO project = 1;
+  required RoleDTO role = 2;
+}
+
+message MembershipDTOList {
+  repeated MembershipDTO membership = 1;
+}

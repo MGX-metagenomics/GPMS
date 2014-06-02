@@ -12,7 +12,7 @@
     <groupId>de.cebitec.gpms</groupId>
     <artifactId>GPMS-db-api</artifactId>
     <version>1.0-RELEASE</version>
-    <packaging>jar</packaging>
+    <packaging>bundle</packaging>
 
     <name>GPMS-db-api</name>
 
@@ -49,6 +49,18 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>2.4.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Export-Package>de.cebitec.gpms.data,de.cebitec.gpms.security,de.cebitec.gpms.util</Export-Package>
+                        <Private-Package>de.cebitec.gpms.data.*,de.cebitec.gpms.security.*,de.cebitec.gpms.util.*</Private-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

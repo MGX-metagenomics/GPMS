@@ -11,6 +11,8 @@ import java.util.Iterator;
 public interface GPMSClientI {
 
     public String getBaseURI();
+    
+    public String getServerName();
 
     public Iterator<ProjectClassI> getProjectClasses();
 

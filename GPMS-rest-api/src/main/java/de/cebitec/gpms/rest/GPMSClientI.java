@@ -1,6 +1,5 @@
 package de.cebitec.gpms.rest;
 
-import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
 import java.util.Iterator;
 
@@ -16,9 +15,9 @@ public interface GPMSClientI {
 
     public Iterator<ProjectClassI> getProjectClasses();
 
-    RESTMasterI createMaster(MembershipI m);
+    RESTMasterI createMaster(RESTMembershipI m);
 
-    Iterator<MembershipI> getMemberships();
+    Iterator<RESTMembershipI> getMemberships();
 
     boolean login(String user, String password);
 

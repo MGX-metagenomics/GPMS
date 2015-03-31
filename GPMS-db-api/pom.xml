@@ -57,6 +57,7 @@
                 <configuration>
                     <instructions>
                         <Export-Package>de.cebitec.gpms.data,de.cebitec.gpms.security,de.cebitec.gpms.util</Export-Package>
+                        <Import-Package>de.cebitec.gpms.core</Import-Package>
                         <Private-Package>de.cebitec.gpms.data.*,de.cebitec.gpms.security.*,de.cebitec.gpms.util.*</Private-Package>
                     </instructions>
                 </configuration>

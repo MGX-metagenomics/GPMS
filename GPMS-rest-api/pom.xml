@@ -50,6 +50,7 @@
                 <configuration>
                     <instructions>
                         <Export-Package>de.cebitec.gpms.rest</Export-Package>
+                        <Import-Package>de.cebitec.gpms.core</Import-Package>
                         <Private-Package>de.cebitec.gpms.rest.*</Private-Package>
                     </instructions>
                 </configuration>

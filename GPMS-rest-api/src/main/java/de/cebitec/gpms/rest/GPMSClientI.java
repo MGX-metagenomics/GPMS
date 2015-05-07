@@ -8,6 +8,8 @@ import java.util.Iterator;
  * @author sjaenick
  */
 public interface GPMSClientI {
+    
+    public RESTUserI getUser();
 
     public String getBaseURI();
     

@@ -47,8 +47,8 @@ public class ProjectClassDTOFactory extends DTOConversionBase<ProjectClassI, Pro
     public ProjectClassDTOList toDTOList(Iterator<ProjectClassI> iter) {
         ProjectClassDTOList.Builder ret = ProjectClassDTOList.newBuilder();
         while (iter.hasNext()) {
-            ret.addProjectclass(toDTO(iter.next()));
-        }
+            ret.addProjectClass(toDTO(iter.next()));
+}
         return ret.build();
     }
 }

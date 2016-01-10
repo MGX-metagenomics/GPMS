@@ -28,7 +28,7 @@ message ProjectClassDTO {
 }
 
 message ProjectClassDTOList {
-  repeated ProjectClassDTO projectclass = 1;
+  repeated ProjectClassDTO project_class = 1;
 }
 
 message ProjectDTO {
@@ -48,4 +48,22 @@ message MembershipDTO {
 
 message MembershipDTOList {
   repeated MembershipDTO membership = 1;
+}
+
+message DataSourceTypeDTO {
+  required string name = 1;
+}
+
+message DataSourceDTO {
+  required DataSourceTypeDTO type = 1;
+  required string name = 2;
+}
+
+message DataSource_ASDTO {
+  required DataSourceDTO parent = 1;
+  required string URL = 2;
+}
+
+message DataSourceDTOList {
+  repeated DataSourceDTO datasource = 1;
 }

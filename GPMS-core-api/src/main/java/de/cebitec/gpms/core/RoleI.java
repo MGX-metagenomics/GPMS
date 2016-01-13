@@ -1,5 +1,7 @@
 package de.cebitec.gpms.core;
 
+import java.util.List;
+
 /**
  *
  * @author sjaenick
@@ -7,4 +9,8 @@ package de.cebitec.gpms.core;
 public interface RoleI {
 
     public String getName();
+    
+    public ProjectClassI getProjectClass();
+
+    public List<RightI> getRights();
 }

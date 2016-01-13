@@ -64,7 +64,7 @@ public abstract class EMFNameResolver {
         }
         throw new UnsupportedOperationException("No EMFResolver for Persistence Unit " + pu);
     }
-    private static HashMap<EMFNameResolver, List<EntityManagerFactory>> resolvers = new HashMap<>();
+    private static final HashMap<EMFNameResolver, List<EntityManagerFactory>> resolvers = new HashMap<>();
 
     public static void registerResolver(EMFNameResolver resolver) {
         if (!resolvers.containsKey(resolver)) {

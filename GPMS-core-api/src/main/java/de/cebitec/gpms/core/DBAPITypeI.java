@@ -3,15 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package de.cebitec.gpms.rest;
-
-import de.cebitec.gpms.core.ProjectI;
+package de.cebitec.gpms.core;
 
 /**
  *
- * @author sj
+ * @author sjaenick
  */
-public interface RESTProjectI extends ProjectI {
-    
-    public String getRESTURI();
+public interface DBAPITypeI {
+
+    public String getName();
 }

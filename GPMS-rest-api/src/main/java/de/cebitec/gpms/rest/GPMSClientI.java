@@ -1,6 +1,10 @@
 package de.cebitec.gpms.rest;
 
+import de.cebitec.gpms.core.GPMSException;
+import de.cebitec.gpms.core.MasterI;
+import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
+import de.cebitec.gpms.core.UserI;
 import java.util.Iterator;
 
 /**
@@ -9,7 +13,7 @@ import java.util.Iterator;
  */
 public interface GPMSClientI {
     
-    public RESTUserI getUser();
+    public UserI getUser();
 
     public String getBaseURI();
     
@@ -17,9 +21,9 @@ public interface GPMSClientI {
 
     public Iterator<ProjectClassI> getProjectClasses();
 
-    RESTMasterI createMaster(RESTMembershipI m);
+    MasterI createMaster(MembershipI m);
 
-    Iterator<RESTMembershipI> getMemberships();
+    Iterator<MembershipI> getMemberships() throws GPMSException;
 
     boolean login(String user, String password);
 

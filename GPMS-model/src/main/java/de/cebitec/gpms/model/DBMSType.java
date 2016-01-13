@@ -14,15 +14,15 @@ import de.cebitec.gpms.core.DBMSTypeI;
 public class DBMSType implements DBMSTypeI {
 
     private final String name;
-    private final int version;
+    private final String version;
 
-    public DBMSType(String name, int version) {
+    public DBMSType(String name, String version) {
         this.name = name;
         this.version = version;
     }
 
     @Override
-    public int getVersion() {
+    public String getVersion() {
         return version;
     }
 

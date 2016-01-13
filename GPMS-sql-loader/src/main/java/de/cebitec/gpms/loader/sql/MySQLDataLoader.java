@@ -271,7 +271,7 @@ public class MySQLDataLoader implements GPMSDataLoaderI {
                 try (ResultSet rs = stmt.executeQuery()) {
                     while (rs.next()) {
                         HostI host = new GPMSHost(rs.getString(1), rs.getInt(2));
-                        DBMSTypeI dbms = new DBMSType(rs.getString(3), rs.getInt(4));
+                        DBMSTypeI dbms = new DBMSType(rs.getString(3), rs.getString(4));
                         DataSource_DBI dataSource = new GPMSDataSourceDB(rs.getString(5), MGX_DS_TYPE, dbms, MGX_DBAPI_TYPE, host);
                         datasources.add(dataSource);
                     }

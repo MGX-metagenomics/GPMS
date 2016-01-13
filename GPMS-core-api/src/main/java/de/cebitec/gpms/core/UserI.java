@@ -1,6 +1,6 @@
 package de.cebitec.gpms.core;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  *
@@ -9,6 +9,8 @@ import java.util.List;
 public interface UserI {
 
     public String getLogin();
+    
+    public String getPassword();
 
-    public List<? extends MembershipI> getMemberships(ProjectClassI projClass);
+    public Collection<MembershipI> getMemberships();
 }

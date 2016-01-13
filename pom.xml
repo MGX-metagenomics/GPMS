@@ -25,6 +25,11 @@
         <module>GPMS-db-api</module>
         <module>GPMS-rest-api</module>
         <module>GPMS-DTO</module>
+        <module>GPMS-model</module>
+        <module>GPMS-db-model</module>
+        <module>GPMS-sql-loader</module>
+        <module>GPMS-ldap-loader</module>
+        <module>GPMS-glassfish3-realm</module>
     </modules>
 
     <distributionManagement>

@@ -1,6 +1,6 @@
 package de.cebitec.gpms.core;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -10,5 +10,5 @@ public interface ProjectClassI {
 
     public String getName();
 
-    public List<? extends RoleI> getRoles();
+    public Set<RoleI> getRoles();
 }

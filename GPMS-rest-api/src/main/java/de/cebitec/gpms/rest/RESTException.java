@@ -5,15 +5,18 @@
  */
 package de.cebitec.gpms.rest;
 
-import de.cebitec.gpms.core.MembershipI;
-import de.cebitec.gpms.core.RoleI;
-
 /**
  *
- * @author sj
+ * @author sjaenick
  */
-public interface RESTMembershipI<U extends RoleI> extends MembershipI<RESTProjectI, U> {
+public class RESTException extends Exception {
+
+    public RESTException(String message) {
+        super(message);
+    }
+
+    public RESTException(Throwable cause) {
+        super(cause);
+    }
     
-    @Override
-    public RESTProjectI getProject();
 }

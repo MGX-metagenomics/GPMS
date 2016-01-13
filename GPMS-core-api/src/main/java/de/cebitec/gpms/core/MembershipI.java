@@ -5,9 +5,9 @@ package de.cebitec.gpms.core;
  *
  * @author sjaenick
  */
-public interface MembershipI<T extends ProjectI, U extends RoleI> {
+public interface MembershipI {
 
-    public T getProject();
+    public ProjectI getProject();
 
-    public U getRole();
+    public RoleI getRole();
 }

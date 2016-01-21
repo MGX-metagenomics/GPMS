@@ -2,7 +2,10 @@ package de.cebitec.gpms.util;
 
 import de.cebitec.gpms.core.MembershipI;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 
 /**
  * A EMFNameResolver can be implemented as a service. It is used to load a persistenceunit
@@ -22,10 +25,13 @@ public abstract class EMFNameResolver {
      */
     public abstract boolean handles(MembershipI pm);
 
-    public abstract String resolve(MembershipI pm);
+    public abstract String getPUName();
 
-    public abstract EntityManagerFactory create(String pu, Properties config);
-
+    public final EntityManagerFactory create(Properties config) {
+        Logger.getLogger(getClass().getName()).log(Level.INFO, "Creating EntityManagerFactory for {0}", getPUName());
+        return Persistence.createEntityManagerFactory(getPUName(), config);
+    }
+    
     /**
      * Checks all EMFNameResolvers whether they can resolve a projectclass to a
      * persistence unit name. If this succeeds the PU name is returned. Otherwise
@@ -35,36 +41,34 @@ public abstract class EMFNameResolver {
      * @return
      */
     public static String resolvePUName(MembershipI pm) {
-        for (Iterator<EMFNameResolver> it = resolvers.keySet().iterator(); it.hasNext();) {
-            EMFNameResolver eMFNameResolver = it.next();
+        for (EMFNameResolver eMFNameResolver : resolvers.keySet()) {
             if (eMFNameResolver.handles(pm)) {
-                return eMFNameResolver.resolve(pm);
+                return eMFNameResolver.getPUName();
             }
         }
         return pm.getProject().getProjectClass().getName();
     }
 
-    public static EntityManagerFactory createEMF(MembershipI pm, String jndi, String pu) {
+    public static EntityManagerFactory createEMF(MembershipI pm, String jndi) {
         Properties props = new Properties();
         props.setProperty("javax.persistence.jtaDataSource", jndi);
 
-        for (Iterator<EMFNameResolver> it = resolvers.keySet().iterator(); it.hasNext();) {
-            EMFNameResolver eMFNameResolver = it.next();
+        for (EMFNameResolver eMFNameResolver : resolvers.keySet()) {
             if (eMFNameResolver.handles(pm)) {
                 // it may be, that the registered EMFResolver has a different classloader
                 // that can't be accessed from the thread classloader. So we simply change
                 // the active classloader to the right one for PU creation.
                 ClassLoader tmp = Thread.currentThread().getContextClassLoader();
                 Thread.currentThread().setContextClassLoader(eMFNameResolver.getClass().getClassLoader());
-                EntityManagerFactory emf = eMFNameResolver.create(pu, props);
+                EntityManagerFactory emf = eMFNameResolver.create(props);
                 Thread.currentThread().setContextClassLoader(tmp);
                 resolvers.get(eMFNameResolver).add(emf);
                 return emf;
             }
         }
-        throw new UnsupportedOperationException("No EMFResolver for Persistence Unit " + pu);
+        throw new UnsupportedOperationException("No EMFResolver for Persistence Unit ");
     }
-    private static final HashMap<EMFNameResolver, List<EntityManagerFactory>> resolvers = new HashMap<>();
+    private static final Map<EMFNameResolver, List<EntityManagerFactory>> resolvers = new HashMap<>();
 
     public static void registerResolver(EMFNameResolver resolver) {
         if (!resolvers.containsKey(resolver)) {

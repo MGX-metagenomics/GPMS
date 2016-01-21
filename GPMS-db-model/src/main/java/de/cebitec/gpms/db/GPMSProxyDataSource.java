@@ -1,7 +1,7 @@
 
 package de.cebitec.gpms.db;
 
-import de.cebitec.gpms.data.GPMSDataLoaderI;
+import de.cebitec.gpms.data.JDBCMasterI;
 import de.cebitec.gpms.data.ProxyDataSourceI;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -15,14 +15,14 @@ import javax.sql.DataSource;
  */
 public class GPMSProxyDataSource implements ProxyDataSourceI {
     
-    private final GPMSDataLoaderI gpmsLoader;
+    private final GPMSDataLoader gpmsLoader;
 
-    public GPMSProxyDataSource(GPMSDataLoaderI gpmsLoader) {
+    public GPMSProxyDataSource(GPMSDataLoader gpmsLoader) {
         this.gpmsLoader = gpmsLoader;
     }
     
     private DataSource getTarget() {
-        return gpmsLoader.getCurrentMaster().getDataSource();
+        return gpmsLoader.<JDBCMasterI>getCurrentMaster().getDataSource();
     }
     
     @Override

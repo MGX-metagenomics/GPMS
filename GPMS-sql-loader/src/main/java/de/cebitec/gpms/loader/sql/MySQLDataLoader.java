@@ -5,7 +5,6 @@
  */
 package de.cebitec.gpms.loader.sql;
 
-import de.cebitec.gpms.data.GPMSDataLoaderI;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import de.cebitec.gpms.core.DBAPITypeI;
@@ -19,12 +18,9 @@ import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
 import de.cebitec.gpms.core.ProjectI;
 import de.cebitec.gpms.core.RoleI;
-import de.cebitec.gpms.data.JPAMasterI;
 import de.cebitec.gpms.data.ProxyDataSourceI;
-import de.cebitec.gpms.db.DataSourceFactory;
-import de.cebitec.gpms.db.GPMSMaster;
 import de.cebitec.gpms.db.GPMSProxyDataSource;
-import de.cebitec.gpms.util.EMFNameResolver;
+import de.cebitec.gpms.db.GPMSDataLoader;
 import de.cebitec.gpms.model.DBAPIType;
 import de.cebitec.gpms.model.DBMSType;
 import de.cebitec.gpms.model.DataSourceType;
@@ -34,6 +30,7 @@ import de.cebitec.gpms.model.Membership;
 import de.cebitec.gpms.model.Project;
 import de.cebitec.gpms.model.ProjectClass;
 import de.cebitec.gpms.model.Role;
+import de.cebitec.gpms.util.GPMSDataLoaderI;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -60,7 +57,6 @@ import javax.ejb.Startup;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 
 /**
@@ -69,7 +65,7 @@ import javax.sql.DataSource;
  */
 @Singleton
 @Startup
-public class MySQLDataLoader implements GPMSDataLoaderI {
+public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 
     @Resource(mappedName = "jdbc/GPMS")
     private DataSource gpmsds;
@@ -79,8 +75,6 @@ public class MySQLDataLoader implements GPMSDataLoaderI {
 
     //
     private ProxyDataSourceI proxyDS = null;
-    private EntityManagerFactory emf = null;
-    private final ThreadLocal<JPAMasterI> currentMaster = new ThreadLocal<>();
     //
     // caches
     //
@@ -126,51 +120,6 @@ public class MySQLDataLoader implements GPMSDataLoaderI {
                 Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
             }
         }
-    }
-
-    @Override
-    public JPAMasterI createMaster(MembershipI mbr) {
-
-        String[] dbAuth = getDatabaseCredentials(mbr.getRole());
-
-        // find an appropriate GPMS datasource to work with
-        DataSource_DBI selectedGPMSdataSource = null;
-        for (DataSourceI gpmsDS : mbr.getProject().getDataSources()) {
-            if (gpmsDS instanceof DataSource_DBI) {
-                DataSource_DBI dsdb = (DataSource_DBI) gpmsDS;
-                if (MGX_DS_TYPE.equals(dsdb.getType()) && MGX_DBAPI_TYPE.equals(dsdb.getAPIType())) {
-                    selectedGPMSdataSource = dsdb;
-                    break;
-                }
-            }
-        }
-
-        if (selectedGPMSdataSource == null) {
-            throw new RuntimeException("No appropriate SQL datasource could be found for project " + mbr.getProject().getName());
-        }
-
-        DataSource ds = DataSourceFactory.createDataSource(mbr, selectedGPMSdataSource, dbAuth[0], dbAuth[1]);
-        GPMSMaster master = new GPMSMaster(mbr, selectedGPMSdataSource, ds);
-
-        // current master needs to be set _before_ creating the EMF
-        currentMaster.set(master);
-
-        if (emf == null) {
-            emf = EMFNameResolver.createEMF(mbr, ProxyDataSourceI.JNDI_NAME, "MGX-PU");
-        }
-
-        master.setEntityManagerFactory(emf);
-        return master;
-    }
-
-    @Override
-    public JPAMasterI getCurrentMaster() {
-        return currentMaster.get();
-    }
-
-    @Override
-    public void setCurrentMaster(JPAMasterI master) {
-        currentMaster.set(master);
     }
 
     private final static String SQL_GET_MEMBERSHIPS
@@ -240,12 +189,12 @@ public class MySQLDataLoader implements GPMSDataLoaderI {
         return ret;
     }
 
-    private String[] getDatabaseCredentials(RoleI role) {
+    @Override
+    public String[] getDatabaseCredentials(RoleI role) {
         return dbAccess.get(role);
     }
 
     private final static DBAPITypeI MGX_DBAPI_TYPE = new DBAPIType("MGX");
-    private final static DBAPITypeI REST_DBAPI_TYPE = new DBAPIType("REST");
     private final static DataSourceTypeI MGX_DS_TYPE = new DataSourceType("MGX");
 
     private final static String sql = "SELECT Host.hostname AS host, Host.port AS port, "

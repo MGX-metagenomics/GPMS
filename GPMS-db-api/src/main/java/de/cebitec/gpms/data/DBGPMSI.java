@@ -1,5 +1,6 @@
 package de.cebitec.gpms.data;
 
+import de.cebitec.gpms.core.MasterI;
 import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
 import de.cebitec.gpms.core.UserI;
@@ -23,9 +24,9 @@ public interface DBGPMSI {
 //
 //    public void unregisterProjectClass(String pc);
 
-    public void createMaster(MembershipI m);
+    public <T extends MasterI> void createMaster(MembershipI m, Class<T> targetClass);
 
-    public JPAMasterI getCurrentMaster();
+    public <T extends MasterI> T getCurrentMaster();
 
     public UserI getCurrentUser();
 }

@@ -1,4 +1,3 @@
-
 package de.cebitec.gpms.loader.ldap;
 
 import com.google.common.cache.Cache;
@@ -123,10 +122,15 @@ public class LDAPDataLoader extends GPMSDataLoader {
 
     @PostConstruct
     public void start() {
+        // assume repeated  invocation of start method
+        if (ldapPool != null) {
+            return;
+        }
+        
         // setup ldap connection pool
         RoundRobinServerSet serverSet = new RoundRobinServerSet(
                 new String[]{
-//                    "localhost"//,
+                    //                    "localhost"//,
                     "jim.computational.bio.uni-giessen.de",
                     "lukas.computational.bio.uni-giessen.de"
                 }, new int[]{389, 389}
@@ -505,7 +509,6 @@ public class LDAPDataLoader extends GPMSDataLoader {
 //                conn.close();
 //            }
 //        }
-
         return ret;
     }
 

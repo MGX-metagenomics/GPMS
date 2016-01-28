@@ -9,7 +9,7 @@
 
     <groupId>de.cebitec.gpms</groupId>
     <artifactId>GPMS-glassfish3-realm</artifactId>
-    <name>GPMS Glassfish 3.x JAAS Authentication Realm</name>
+    <name>GPMS SQL-based Glassfish 3.x JAAS Authentication Realm</name>
     <packaging>bundle</packaging>
     <version>1.1</version>
 

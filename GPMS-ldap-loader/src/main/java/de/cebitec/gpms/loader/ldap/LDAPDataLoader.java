@@ -37,6 +37,7 @@ import de.cebitec.gpms.model.Membership;
 import de.cebitec.gpms.model.Project;
 import de.cebitec.gpms.model.ProjectClass;
 import de.cebitec.gpms.model.Role;
+import de.cebitec.gpms.util.GPMSDataLoaderI;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -69,7 +70,7 @@ import javax.naming.NamingException;
  */
 @Singleton
 @Startup
-public class LDAPDataLoader extends GPMSDataLoader {
+public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 
     //
     @EJB

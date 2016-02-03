@@ -528,6 +528,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         logger.log(Level.INFO, String.format(msg, args));
     }
 
+    @Override
     public Collection<ProjectClassI> getSupportedProjectClasses() {
         return supportedProjectClasses.values();
     }

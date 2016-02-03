@@ -189,6 +189,41 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         return ret;
     }
 
+    private final static String SQL_GET_PCLASS = "SELECT Project_Class.name FROM Project "
+            + "LEFT JOIN Project_Class ON (Project.project_class_id = Project_Class._id) "
+            + "WHERE Project.name=?";
+
+    @Override
+    public ProjectI getProject(String projectName) throws GPMSException {
+        ProjectI project = null;
+        try {
+            
+            String pClassName = null;
+            try (Connection conn = getConnection()) {
+                try (PreparedStatement stmt = conn.prepareStatement(SQL_GET_PCLASS)) {
+                    stmt.setString(1, projectName);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        while (rs.next()) {
+                            pClassName = rs.getString(1);
+                        }
+                    }
+                }
+            }
+            if (pClassName == null) {
+                 throw new GPMSException("No such project");
+            }
+
+            Collection<DataSourceI> dataSources = loadDataSources(projectName, MGX_DS_TYPE);
+
+            ProjectClassI pClass = new ProjectClass(projectName);
+            project = new Project(projectName, pClass, dataSources, false);
+        } catch (SQLException ex) {
+            Logger.getLogger(MySQLDataLoader.class.getName()).log(Level.SEVERE, null, ex);
+            throw new GPMSException(ex);
+        }
+        return project;
+    }
+
     @Override
     public String[] getDatabaseCredentials(RoleI role) {
         return dbAccess.get(role);

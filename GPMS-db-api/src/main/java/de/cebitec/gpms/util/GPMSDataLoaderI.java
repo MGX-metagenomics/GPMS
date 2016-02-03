@@ -9,6 +9,7 @@ import de.cebitec.gpms.core.GPMSException;
 import de.cebitec.gpms.core.MasterI;
 import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
+import de.cebitec.gpms.core.ProjectI;
 import de.cebitec.gpms.core.RoleI;
 import java.util.Collection;
 
@@ -25,6 +26,8 @@ public interface GPMSDataLoaderI {
     String[] getDatabaseCredentials(RoleI role);
 
     Collection<MembershipI> getMemberships(String userLogin) throws GPMSException;
+    
+    ProjectI getProject(String projectName) throws GPMSException;
 
     Collection<ProjectClassI> getSupportedProjectClasses();
 

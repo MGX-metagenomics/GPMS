@@ -4,6 +4,11 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import de.cebitec.gpms.core.DataSource_DBI;
 import de.cebitec.gpms.core.MembershipI;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -16,7 +21,7 @@ public class DataSourceFactory {
         if (dbUser == null || dbPassword == null) {
             throw new IllegalArgumentException("dbUser and dbPassword must not be null.");
         }
-        
+
         String poolname = new StringBuilder("DS-")
                 .append(m.getProject().getName())
                 .append("-")
@@ -40,6 +45,19 @@ public class DataSourceFactory {
         cfg.setLeakDetectionThreshold(20000); // 20 sec before in-use connection is considered leaked
 
         return new HikariDataSource(cfg);
+    }
+
+    public static Connection createConnection(DataSource_DBI projectGPMSDS, String dbUser, String dbPassword) throws SQLException {
+        String url = new StringBuilder("jdbc:")
+                .append(projectGPMSDS.getDBMSType().getName().toLowerCase())
+                .append("://")
+                .append(projectGPMSDS.getHost().getHostName())
+                .append(":")
+                .append(projectGPMSDS.getHost().getPort())
+                .append("/")
+                .append(projectGPMSDS.getName())
+                .toString();
+        return DriverManager.getConnection(url, dbUser, dbPassword);
     }
 
     private DataSourceFactory() {

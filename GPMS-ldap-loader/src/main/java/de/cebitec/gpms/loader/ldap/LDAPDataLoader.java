@@ -127,7 +127,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         if (ldapPool != null) {
             return;
         }
-        
+
         // setup ldap connection pool
         RoundRobinServerSet serverSet = new RoundRobinServerSet(
                 new String[]{
@@ -250,19 +250,12 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
             for (SearchResultEntry sre : membershipResult.getSearchEntries()) {
                 if (sre.hasAttribute(ATTR_GPMSROLE)) {
                     final String projectDN = sre.getParentDNString();
-
-                    SearchResultEntry projEntry = conn.getEntry(projectDN.toString(), ATTR_NAME, ATTR_PROJECTCLASS);
-                    String projectName = projEntry.getAttributeValue(ATTR_NAME);
-
-                    ProjectClassI projectClass = getProjectClass(projEntry.getAttributeValue(ATTR_PROJECTCLASS));
-
-                    Collection<DataSourceI> projectDataSources = loadDataSources(projectDN);
-                    ProjectI project = new Project(projectName, projectClass, projectDataSources, false);
+                    ProjectI project = getProject(projectDN);
 
                     RoleI targetRole = null;
                     final String roleDN = sre.getAttributeValue(ATTR_GPMSROLE);
                     String roleName = conn.getEntry(roleDN, ATTR_NAME).getAttributeValue(ATTR_NAME);
-                    for (RoleI role : projectClass.getRoles()) {
+                    for (RoleI role : project.getProjectClass().getRoles()) {
                         if (role.getName().equals(roleName)) {
                             targetRole = role;
                             break;
@@ -276,7 +269,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                     }
                 }
             }
-        } catch (LDAPException | ExecutionException ex) {
+        } catch (LDAPException ex) {
             Logger.getLogger(getClass().getName()).log(Level.INFO, ex.getMessage());
             return Collections.EMPTY_LIST; // empty list instead of incomplete one
         } finally {
@@ -289,6 +282,58 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         // cache membership list
         membership_cache.put(userLogin, ret);
         return ret;
+    }
+
+    private String getProjectDN(String projName) throws GPMSException {
+        LDAPConnection conn = null;
+        String projectDN = null;
+        
+        try {
+            conn = getConnection();
+            Filter projectFilter = Filter.create(String.format("(&(objectClass=gpmsProject)(name=%s))", projName));
+            final SearchResult projectResult = conn.search(new SearchRequest(String.format("ou=Project,%s", gpmsBaseDN), SearchScope.SUB, projectFilter, "dn"));
+            if (projectResult.getEntryCount() != 1) {
+                throw new GPMSException("Could not find project " + projName);
+            }
+             projectDN = projectResult.getSearchEntries().get(0).getDN();
+
+        } catch (LDAPException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.INFO, ex.getMessage());
+            throw new GPMSException(ex);
+        } finally {
+            if (conn != null) {
+                conn.close();
+            }
+
+        }
+        return projectDN;
+    }
+
+    @Override
+    public ProjectI getProject(String projectName) throws GPMSException {
+        
+        
+        ProjectI project = null;
+
+        String projectDN = getProjectDN(projectName);
+        LDAPConnection conn = null;
+
+        try {
+            conn = getConnection();
+            SearchResultEntry projEntry = conn.getEntry(projectDN, ATTR_PROJECTCLASS);
+            ProjectClassI projectClass = getProjectClass(projEntry.getAttributeValue(ATTR_PROJECTCLASS));
+
+            Collection<DataSourceI> projectDataSources = loadDataSources(projectDN);
+            project = new Project(projectName, projectClass, projectDataSources, false);
+        } catch (LDAPException | ExecutionException ex) {
+            throw new GPMSException(ex);
+        } finally {
+            if (conn != null) {
+                conn.close();
+            }
+
+        }
+        return project;
     }
 
     @Override

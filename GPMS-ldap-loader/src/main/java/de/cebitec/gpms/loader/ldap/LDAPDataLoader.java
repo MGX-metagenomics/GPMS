@@ -250,7 +250,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
             for (SearchResultEntry sre : membershipResult.getSearchEntries()) {
                 if (sre.hasAttribute(ATTR_GPMSROLE)) {
                     final String projectDN = sre.getParentDNString();
-                    ProjectI project = getProject(projectDN);
+                    ProjectI project = getProjectByDN(projectDN);
 
                     RoleI targetRole = null;
                     final String roleDN = sre.getAttributeValue(ATTR_GPMSROLE);
@@ -287,7 +287,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
     private String getProjectDN(String projName) throws GPMSException {
         LDAPConnection conn = null;
         String projectDN = null;
-        
+
         try {
             conn = getConnection();
             Filter projectFilter = Filter.create(String.format("(&(objectClass=gpmsProject)(name=%s))", projName));
@@ -295,7 +295,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
             if (projectResult.getEntryCount() != 1) {
                 throw new GPMSException("Could not find project " + projName);
             }
-             projectDN = projectResult.getSearchEntries().get(0).getDN();
+            projectDN = projectResult.getSearchEntries().get(0).getDN();
 
         } catch (LDAPException ex) {
             Logger.getLogger(getClass().getName()).log(Level.INFO, ex.getMessage());
@@ -306,21 +306,25 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
             }
 
         }
+
         return projectDN;
     }
 
     @Override
     public ProjectI getProject(String projectName) throws GPMSException {
-        
-        
-        ProjectI project = null;
-
         String projectDN = getProjectDN(projectName);
+        return getProjectByDN(projectDN);
+
+    }
+
+    public ProjectI getProjectByDN(String projectDN) throws GPMSException {
+        ProjectI project = null;
         LDAPConnection conn = null;
 
         try {
             conn = getConnection();
-            SearchResultEntry projEntry = conn.getEntry(projectDN, ATTR_PROJECTCLASS);
+            SearchResultEntry projEntry = conn.getEntry(projectDN, ATTR_PROJECTCLASS, ATTR_NAME);
+            String projectName = projEntry.getAttributeValue(ATTR_NAME);
             ProjectClassI projectClass = getProjectClass(projEntry.getAttributeValue(ATTR_PROJECTCLASS));
 
             Collection<DataSourceI> projectDataSources = loadDataSources(projectDN);

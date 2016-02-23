@@ -29,4 +29,6 @@ public interface GPMSClientI {
 
     void logout();
     
+    boolean loggedIn();
+    
 }

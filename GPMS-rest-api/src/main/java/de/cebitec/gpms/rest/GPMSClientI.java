@@ -33,6 +33,8 @@ public interface GPMSClientI {
     void logout();
 
     boolean loggedIn();
+    
+    long ping();
 
     public void addPropertyChangeListener(PropertyChangeListener listener);
 

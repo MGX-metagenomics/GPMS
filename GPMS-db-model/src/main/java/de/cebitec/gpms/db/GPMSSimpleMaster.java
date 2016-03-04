@@ -5,6 +5,7 @@ import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectI;
 import de.cebitec.gpms.core.RoleI;
 import de.cebitec.gpms.core.UserI;
+import java.beans.PropertyChangeListener;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,6 +73,14 @@ public class GPMSSimpleMaster implements MasterI {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+    }
+
+    @Override
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
     }
 
 }

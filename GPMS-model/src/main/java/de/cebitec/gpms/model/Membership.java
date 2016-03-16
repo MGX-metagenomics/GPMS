@@ -14,6 +14,12 @@ public class Membership implements MembershipI {
     private final RoleI role;
 
     public Membership(ProjectI project, RoleI role) {
+        if (project == null) {
+            throw new IllegalArgumentException("No project supplied for membership");
+        }
+        if (role == null) {
+            throw new IllegalArgumentException("No role supplied for membership");
+        }
         this.project = project;
         this.role = role;
     }

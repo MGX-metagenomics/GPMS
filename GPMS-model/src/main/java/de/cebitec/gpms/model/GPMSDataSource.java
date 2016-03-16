@@ -18,6 +18,12 @@ public class GPMSDataSource implements DataSourceI {
     private final DataSourceTypeI dsType;
 
     public GPMSDataSource(String name, DataSourceTypeI dsType) {
+        if (name == null) {
+            throw new IllegalArgumentException("No name supplied for datasource");
+        }
+        if (dsType == null) {
+            throw new IllegalArgumentException("Null data source type supplied for data source " + name);
+        }
         this.name = name;
         this.dsType = dsType;
     }

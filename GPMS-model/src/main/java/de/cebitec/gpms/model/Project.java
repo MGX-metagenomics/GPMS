@@ -17,6 +17,12 @@ public class Project implements ProjectI {
     private final Collection<DataSourceI> dataSources;
 
     public Project(String name, ProjectClassI pclass, Collection<DataSourceI> dataSources, boolean isPublic) {
+        if (name == null) {
+            throw new IllegalArgumentException("No name supplied for project");
+        }
+        if (pclass == null) {
+            throw new IllegalArgumentException("Null project class supplied for project " + name);
+        }
         this.name = name;
         this.pclass = pclass;
         this.dataSources = dataSources;

@@ -23,6 +23,8 @@ public interface MasterI extends AutoCloseable {
     @Override
     public void close();
 
+    public void logout();
+
     public void addPropertyChangeListener(PropertyChangeListener listener);
 
     public void removePropertyChangeListener(PropertyChangeListener listener);

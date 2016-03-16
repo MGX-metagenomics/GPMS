@@ -24,7 +24,7 @@ public interface GPMSClientI {
 
     public Iterator<ProjectClassI> getProjectClasses();
 
-    MasterI createMaster(MembershipI m);
+    RESTMasterI createMaster(MembershipI m);
 
     Iterator<MembershipI> getMemberships() throws GPMSException;
 

@@ -82,6 +82,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
     private final static String baseDN = "dc=computational,dc=bio,dc=uni-giessen,dc=de";
     private final static String gpmsBaseDN = "ou=gpms,ou=services," + baseDN;
     private final static String userBaseDN = "ou=users,dc=computational,dc=bio,dc=uni-giessen,dc=de";
+    private final static String projClassBaseDN = "ou=Project_Class," + gpmsBaseDN;
     //
     private LDAPConnectionPool ldapPool;
     //
@@ -252,20 +253,22 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                     final String projectDN = sre.getParentDNString();
                     ProjectI project = getProjectByDN(projectDN);
 
-                    RoleI targetRole = null;
-                    final String roleDN = sre.getAttributeValue(ATTR_GPMSROLE);
-                    String roleName = conn.getEntry(roleDN, ATTR_NAME).getAttributeValue(ATTR_NAME);
-                    for (RoleI role : project.getProjectClass().getRoles()) {
-                        if (role.getName().equals(roleName)) {
-                            targetRole = role;
-                            break;
+                    if (project != null) {
+                        RoleI targetRole = null;
+                        final String roleDN = sre.getAttributeValue(ATTR_GPMSROLE);
+                        String roleName = conn.getEntry(roleDN, ATTR_NAME).getAttributeValue(ATTR_NAME);
+                        for (RoleI role : project.getProjectClass().getRoles()) {
+                            if (role.getName().equals(roleName)) {
+                                targetRole = role;
+                                break;
+                            }
                         }
-                    }
 
-                    if (targetRole != null) {
-                        ret.add(new Membership(project, targetRole));
-                    } else {
-                        log("Invalid role name {0} for {1} in project {2}", roleName, userLogin, project.getName());
+                        if (targetRole != null) {
+                            ret.add(new Membership(project, targetRole));
+                        } else {
+                            log("Invalid role name {0} for {1} in project {2}", roleName, userLogin, project.getName());
+                        }
                     }
                 }
             }
@@ -491,9 +494,13 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         String cfgFileName = new StringBuilder(config.getGPMSConfigDirectory()).append(File.separator).append(pClass.getName().toLowerCase()).append(".conf").toString();
         File cfgFile = new File(cfgFileName);
         if (!cfgFile.exists()) {
-            throw new GPMSException(cfgFile.getAbsolutePath() + " missing or unreadable.");
+            log(cfgFile.getAbsolutePath() + " missing or unreadable, obtaining roles for " + pClass.getName() + " from LDAP directory.");
+            return loadRolesFromDirectory(pClass);
         }
 
+        //
+        // read roles from gpms config file
+        //
         log("Reading " + pClass.getName() + " role file " + cfgFile.getAbsolutePath());
 
         List<RoleI> ret = new ArrayList<>(3);
@@ -562,6 +569,34 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         return ret;
     }
 
+    private Collection<RoleI> loadRolesFromDirectory(ProjectClassI pClass) throws GPMSException {
+        List<RoleI> ret = new ArrayList<>(3);
+
+        LDAPConnection conn = null;
+
+        try {
+            conn = getConnection();
+            Filter pclassFilter = Filter.create("(objectClass=gpmsRole)");
+            final SearchResult roleResult = conn.search(new SearchRequest(String.format("name=%s,%s", pClass.getName(), projClassBaseDN), SearchScope.SUB, pclassFilter, ATTR_NAME));
+            for (SearchResultEntry sre : roleResult.getSearchEntries()) {
+                String roleName = sre.getAttributeValue(ATTR_NAME);
+                log(pClass.getName() + ": found LDAP role: " + roleName);
+                RoleI r = new Role(pClass, roleName);
+                ret.add(r);
+                pClass.getRoles().add(r);
+            }
+        } catch (LDAPException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.INFO, ex.getMessage());
+            throw new GPMSException(ex);
+        } finally {
+            if (conn != null) {
+                conn.close();
+            }
+
+        }
+        return ret;
+    }
+
     private LDAPConnection getConnection() throws LDAPException {
         return ldapPool.getConnection();
     }
@@ -579,7 +614,26 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 
     @Override
     public Collection<ProjectClassI> getSupportedProjectClasses() {
-        return supportedProjectClasses.values();
+        Collection<ProjectClassI> ret = new ArrayList<>(supportedProjectClasses.size());
+        //
+        //  filter all seen project classes and return only those where
+        // all roles have valid database access credentials
+        //
+        for (ProjectClassI pClass : supportedProjectClasses.values()) {
+            boolean allRolesAccessible = true;
+            for (RoleI role : pClass.getRoles()) {
+                String[] databaseCredentials = getDatabaseCredentials(role);
+                if (databaseCredentials == null) {
+                    allRolesAccessible = false;
+                    break;
+                }
+            }
+
+            if (allRolesAccessible) {
+                ret.add(pClass);
+            }
+        }
+        return ret;
     }
 
 }

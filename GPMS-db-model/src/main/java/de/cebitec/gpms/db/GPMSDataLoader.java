@@ -58,6 +58,10 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
             DataSource_DBI dsDB = (DataSource_DBI) selectedGPMSdataSource;
             final String[] dbAuth = getDatabaseCredentials(mbr.getRole());
 
+            if (dbAuth == null || dbAuth.length != 2) {
+                throw new GPMSException("Server does not support " + mbr.getProject().getProjectClass().getName() + " projects.");
+            }
+
             // create SQL datasource
             DataSource ds = DataSourceFactory.createDataSource(mbr, dsDB, dbAuth[0], dbAuth[1]);
 

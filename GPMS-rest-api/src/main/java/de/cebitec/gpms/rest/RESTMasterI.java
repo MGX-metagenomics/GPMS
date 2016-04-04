@@ -9,7 +9,7 @@ import de.cebitec.gpms.core.MasterI;
 
 /**
  *
- * @author sj
+ * @author sjaenick
  */
 public interface RESTMasterI extends MasterI {
     

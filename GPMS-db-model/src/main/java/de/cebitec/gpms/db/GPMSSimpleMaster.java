@@ -24,11 +24,6 @@ public class GPMSSimpleMaster implements MasterI {
     }
 
     @Override
-    public void logout() {
-        close();
-    }
-
-    @Override
     public void close() {
         // nop
     }

@@ -1,7 +1,6 @@
 package de.cebitec.gpms.rest;
 
 import de.cebitec.gpms.core.GPMSException;
-import de.cebitec.gpms.core.MasterI;
 import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
 import de.cebitec.gpms.core.UserI;

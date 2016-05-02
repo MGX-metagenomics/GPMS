@@ -30,6 +30,8 @@
         <module>GPMS-sql-loader</module>
         <module>GPMS-ldap-loader</module>
         <module>GPMS-glassfish3-realm</module>
+        <module>GPMS-Nodesupport</module>
+        <module>GPMS-Server</module>
     </modules>
 
     <distributionManagement>

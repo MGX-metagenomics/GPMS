@@ -23,7 +23,7 @@ public interface GPMSDataLoaderI {
 
     <T extends MasterI> T getCurrentMaster();
 
-    String[] getDatabaseCredentials(RoleI role);
+    String[] getDatabaseCredentials(RoleI role) throws GPMSException ;
 
     Collection<MembershipI> getMemberships(String userLogin) throws GPMSException;
     

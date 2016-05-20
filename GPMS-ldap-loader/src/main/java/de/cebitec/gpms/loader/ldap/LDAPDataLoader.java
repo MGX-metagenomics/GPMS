@@ -344,8 +344,12 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
     }
 
     @Override
-    public String[] getDatabaseCredentials(RoleI role) {
-        return dbAccess.get(role);
+    public String[] getDatabaseCredentials(RoleI role) throws GPMSException {
+        String[] ret = dbAccess.get(role);
+        if (ret == null || ret.length != 2) {
+            throw new GPMSException("No credentials available.");
+        }
+        return ret;
     }
 
     private Collection<DataSourceI> loadDataSources(String projectDN) throws LDAPException, GPMSException, ExecutionException {
@@ -622,7 +626,12 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         for (ProjectClassI pClass : supportedProjectClasses.values()) {
             boolean allRolesAccessible = true;
             for (RoleI role : pClass.getRoles()) {
-                String[] databaseCredentials = getDatabaseCredentials(role);
+                String[] databaseCredentials = null;
+                try {
+                    databaseCredentials = getDatabaseCredentials(role);
+                } catch (GPMSException ex) {
+                    allRolesAccessible = false;
+                }
                 if (databaseCredentials == null) {
                     allRolesAccessible = false;
                     break;

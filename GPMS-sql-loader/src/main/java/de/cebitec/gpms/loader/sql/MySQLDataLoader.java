@@ -160,7 +160,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                             projectClass = new ProjectClass(projectClassname);
                             loadRoles(projectClass); // load role definitions
                         }
-                        Collection<DataSourceI> projectDataSources = loadDataSources(projectName, MGX_DS_TYPE);
+                        Collection<DataSourceI> projectDataSources = loadDataSources(projectName);
                         ProjectI project = new Project(projectName, projectClass, projectDataSources, false);
 
                         RoleI targetRole = null;
@@ -197,23 +197,23 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
     public ProjectI getProject(String projectName) throws GPMSException {
         ProjectI project = null;
         try {
-            
+
             String pClassName = null;
             try (Connection conn = getConnection()) {
                 try (PreparedStatement stmt = conn.prepareStatement(SQL_GET_PCLASS)) {
                     stmt.setString(1, projectName);
                     try (ResultSet rs = stmt.executeQuery()) {
-                        while (rs.next()) {
+                        if (rs.next()) {
                             pClassName = rs.getString(1);
                         }
                     }
                 }
             }
             if (pClassName == null) {
-                 throw new GPMSException("No such project");
+                throw new GPMSException("No such project");
             }
 
-            Collection<DataSourceI> dataSources = loadDataSources(projectName, MGX_DS_TYPE);
+            Collection<DataSourceI> dataSources = loadDataSources(projectName);
 
             ProjectClassI pClass = new ProjectClass(projectName);
             project = new Project(projectName, pClass, dataSources, false);
@@ -225,16 +225,20 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
     }
 
     @Override
-    public String[] getDatabaseCredentials(RoleI role) {
-        return dbAccess.get(role);
+    public String[] getDatabaseCredentials(RoleI role) throws GPMSException {
+        String[] ret = dbAccess.get(role);
+        if (ret == null || ret.length != 2) {
+            throw new GPMSException("No credentials available.");
+        }
+        return ret;
     }
 
-    private final static DBAPITypeI MGX_DBAPI_TYPE = new DBAPIType("MGX");
-    private final static DataSourceTypeI MGX_DS_TYPE = new DataSourceType("MGX");
-
-    private final static String sql = "SELECT Host.hostname AS host, Host.port AS port, "
+//    private final static DBAPITypeI MGX_DBAPI_TYPE = new DBAPIType("MGX");
+//    private final static DataSourceTypeI MGX_DS_TYPE = new DataSourceType("MGX");
+    private final static String LOAD_DATASOURCES = "SELECT Host.hostname AS host, Host.port AS port, "
             + "DBMS_Type.name AS dbmsname, DBMS_Type.version_ AS dbmsver, "
-            + "DataSource.name AS datasource_name "
+            + "DataSource.name AS datasource_name, DataSource_Type.name AS dsTypeName, "
+            + "DB_API_Type.name AS dbApiName "
             + "FROM Project "
             + "LEFT JOIN Project_datasources ON (Project._id = Project_datasources._parent_id) "
             + "LEFT JOIN DataSource ON (Project_datasources._array_value = DataSource._id) "
@@ -242,21 +246,24 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
             + "LEFT JOIN DataSource_DB ON (DataSource._id = DataSource_DB._parent_id) "
             + "LEFT JOIN Host ON (DataSource_DB.host_id = Host._id) "
             + "LEFT JOIN DBMS_Type ON (DataSource_DB.dbms_type_id = DBMS_Type._id) "
-            + "WHERE DataSource_Type.name=? AND Project.name=?";
+            + "LEFT JOIN DB_API_Type ON (DataSource_DB.db_api_type_id = DB_API_Type._id) "
+            + "WHERE Project.name=?";
 
-    private Collection<DataSourceI> loadDataSources(String projectName, DataSourceTypeI dsType) throws SQLException {
+    private Collection<DataSourceI> loadDataSources(String projectName) throws SQLException {
 
-        List<DataSourceI> datasources = new ArrayList<>();
+        List<DataSourceI> datasources = new ArrayList<>(1);
 
         try (Connection conn = getConnection()) {
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, dsType.getName());
+            try (PreparedStatement stmt = conn.prepareStatement(LOAD_DATASOURCES)) {
+                //stmt.setString(1, MGX_DS_TYPE.getName());
                 stmt.setString(2, projectName);
                 try (ResultSet rs = stmt.executeQuery()) {
                     while (rs.next()) {
                         HostI host = new GPMSHost(rs.getString(1), rs.getInt(2));
                         DBMSTypeI dbms = new DBMSType(rs.getString(3), rs.getString(4));
-                        DataSource_DBI dataSource = new GPMSDataSourceDB(rs.getString(5), MGX_DS_TYPE, dbms, MGX_DBAPI_TYPE, host);
+                        DataSourceTypeI dsType = new DataSourceType(rs.getString(6));
+                        DBAPITypeI apiType = new DBAPIType(rs.getString(7));
+                        DataSource_DBI dataSource = new GPMSDataSourceDB(rs.getString(5), dsType, dbms, apiType, host);
                         datasources.add(dataSource);
                     }
                 }
@@ -270,7 +277,8 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         String cfgFileName = new StringBuilder(config.getGPMSConfigDirectory()).append(File.separator).append(pClass.getName().toLowerCase()).append(".conf").toString();
         File cfgFile = new File(cfgFileName);
         if (!cfgFile.exists()) {
-            throw new GPMSException(cfgFile.getAbsolutePath() + " missing or unreadable.");
+            log(cfgFile.getAbsolutePath() + " missing or unreadable, obtaining roles for " + pClass.getName() + " from SQL database.");
+            return loadRolesFromDB(pClass);
         }
 
         log("Reading " + pClass.getName() + " role file " + cfgFile.getAbsolutePath());
@@ -315,6 +323,33 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         return ret;
     }
 
+    private final static String ROLES_BY_PCLASSNAME = "SELECT r.name FROM Role r "
+            + "LEFT JOIN Project_Class pc ON (r.project_class_id=pc._id) "
+            + "WHERE pc.name=?";
+
+    private Collection<RoleI> loadRolesFromDB(ProjectClassI pClass) throws GPMSException {
+        List<RoleI> ret = new ArrayList<>(3);
+
+        try (Connection conn = getConnection()) {
+            try (PreparedStatement stmt = conn.prepareStatement(ROLES_BY_PCLASSNAME)) {
+                stmt.setString(1, pClass.getName());
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        String roleName = rs.getString(1);
+                        log(pClass.getName() + ": found DB role: " + roleName);
+                        RoleI r = new Role(pClass, roleName);
+                        ret.add(r);
+                        pClass.getRoles().add(r);
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.INFO, ex.getMessage());
+            throw new GPMSException(ex);
+        }
+        return ret;
+    }
+
     private Connection getConnection() throws SQLException {
         return gpmsds.getConnection();
     }
@@ -331,7 +366,31 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 
     @Override
     public Collection<ProjectClassI> getSupportedProjectClasses() {
-        return supportedProjectClasses.values();
+        Collection<ProjectClassI> ret = new ArrayList<>(supportedProjectClasses.size());
+        //
+        //  filter all seen project classes and return only those where
+        // all roles have valid database access credentials
+        //
+        for (ProjectClassI pClass : supportedProjectClasses.values()) {
+            boolean allRolesAccessible = true;
+            for (RoleI role : pClass.getRoles()) {
+                String[] databaseCredentials = null;
+                try {
+                    databaseCredentials = getDatabaseCredentials(role);
+                } catch (GPMSException ex) {
+                    allRolesAccessible = false;
+                }
+                if (databaseCredentials == null) {
+                    allRolesAccessible = false;
+                    break;
+                }
+            }
+
+            if (allRolesAccessible) {
+                ret.add(pClass);
+            }
+        }
+        return ret;
     }
 
 }

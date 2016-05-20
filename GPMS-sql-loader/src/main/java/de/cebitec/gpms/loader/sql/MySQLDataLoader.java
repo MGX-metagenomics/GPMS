@@ -237,10 +237,10 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 //    private final static DataSourceTypeI MGX_DS_TYPE = new DataSourceType("MGX");
     private final static String LOAD_DATASOURCES = "SELECT Host.hostname AS host, Host.port AS port, "
             + "DBMS_Type.name AS dbmsname, DBMS_Type.version_ AS dbmsver, "
-            + "DataSource.name AS datasource_name, DataSource_Type.name AS dsTypeName, "
+            + "DataSource.name AS dsName, DataSource_Type.name AS dsTypeName, "
             + "DB_API_Type.name AS dbApiName "
             + "FROM Project "
-            + "LEFT JOIN Project_datasources ON (Project._id = Project_datasources._parent_id) "
+            + "JOIN Project_datasources ON (Project._id = Project_datasources._parent_id) "
             + "LEFT JOIN DataSource ON (Project_datasources._array_value = DataSource._id) "
             + "LEFT JOIN DataSource_Type ON (DataSource.datasource_type_id = DataSource_Type._id) "
             + "LEFT JOIN DataSource_DB ON (DataSource._id = DataSource_DB._parent_id) "
@@ -252,18 +252,19 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
     private Collection<DataSourceI> loadDataSources(String projectName) throws SQLException {
 
         List<DataSourceI> datasources = new ArrayList<>(1);
-
+        
         try (Connection conn = getConnection()) {
             try (PreparedStatement stmt = conn.prepareStatement(LOAD_DATASOURCES)) {
                 //stmt.setString(1, MGX_DS_TYPE.getName());
-                stmt.setString(2, projectName);
+                stmt.setString(1, projectName);
                 try (ResultSet rs = stmt.executeQuery()) {
                     while (rs.next()) {
                         HostI host = new GPMSHost(rs.getString(1), rs.getInt(2));
                         DBMSTypeI dbms = new DBMSType(rs.getString(3), rs.getString(4));
+                        String datasourceName = rs.getString(5);
                         DataSourceTypeI dsType = new DataSourceType(rs.getString(6));
                         DBAPITypeI apiType = new DBAPIType(rs.getString(7));
-                        DataSource_DBI dataSource = new GPMSDataSourceDB(rs.getString(5), dsType, dbms, apiType, host);
+                        DataSource_DBI dataSource = new GPMSDataSourceDB(datasourceName, dsType, dbms, apiType, host);
                         datasources.add(dataSource);
                     }
                 }

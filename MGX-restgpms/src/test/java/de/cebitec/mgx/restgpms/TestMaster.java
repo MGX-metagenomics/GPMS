@@ -43,7 +43,7 @@ public class TestMaster {
             Assume.assumeFalse("Could not connect to "+serverURI, true);
         }
 
-        GPMSClient gpms = new GPMSClient("MyServer", serverURI);
+        GPMSClient gpms = new GPMSClient("MyServer", serverURI, false);
         return gpms;
     }
 }

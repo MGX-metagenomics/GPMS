@@ -67,15 +67,19 @@ public class GPMSClient implements GPMSClientI {
             return "artificial REST datasource type";
         }
     };
-
+    
     public GPMSClient(String servername, String gpmsBaseURI) {
+        this(servername, gpmsBaseURI, true);
+    }
+
+    public GPMSClient(String servername, String gpmsBaseURI, boolean requireSSL) {
         if (gpmsBaseURI == null) {
             throw new IllegalArgumentException("No base URI supplied.");
         }
         if (!gpmsBaseURI.endsWith("/")) {
             gpmsBaseURI += "/";
         }
-        if (!gpmsBaseURI.startsWith("https://")) {
+        if (requireSSL && !gpmsBaseURI.startsWith("https://")) {
             throw new IllegalArgumentException("Secure connection required.");
         }
         this.servername = servername;

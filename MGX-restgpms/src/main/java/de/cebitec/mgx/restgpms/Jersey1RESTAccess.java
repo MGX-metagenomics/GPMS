@@ -267,7 +267,7 @@ public class Jersey1RESTAccess implements RESTAccessI {
         }
     }
 
-    public WebResource.Builder buildPath(String... pathComponents) {
+    private WebResource.Builder buildPath(String... pathComponents) {
         WebResource wr = getWebResource();
         try {
             for (String s : pathComponents) {

@@ -122,14 +122,13 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         }
     }
 
-    private final static String SQL_GET_MEMBERSHIPS
-            = new StringBuilder("SELECT Project.name AS pName, Role.name AS rName, Project_Class.name AS pcName FROM User ")
-            .append("LEFT JOIN Member on (User._id = Member.user_id) ")
-            .append("LEFT JOIN Project on (Member.project_id = Project._id) ")
-            .append("LEFT JOIN Project_Class on (Project.project_class_id = Project_Class._id) ")
-            .append("LEFT JOIN Role on (Member.role_id = Role._id) ")
-            .append("WHERE User.login=?")
-            .toString();
+    private final static String SQL_GET_MEMBERSHIPS_BY_LOGIN
+            = "SELECT Project.name AS pName, Role.name AS rName, Project_Class.name AS pcName FROM User "
+            + "LEFT JOIN Member on (User._id = Member.user_id) "
+            + "LEFT JOIN Project on (Member.project_id = Project._id) "
+            + "LEFT JOIN Project_Class on (Project.project_class_id = Project_Class._id) "
+            + "LEFT JOIN Role on (Member.role_id = Role._id) "
+            + "WHERE User.login=?";
 
     @Override
     public Collection<MembershipI> getMemberships(final String userLogin) throws GPMSException {
@@ -142,10 +141,10 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 
         // no cache entry, have to do the lookup
         //
-        List<MembershipI> ret = new ArrayList<>();
+        List<MembershipI> memberships = new ArrayList<>();
 
         try (Connection conn = getConnection()) {
-            try (PreparedStatement stmt = conn.prepareStatement(SQL_GET_MEMBERSHIPS)) {
+            try (PreparedStatement stmt = conn.prepareStatement(SQL_GET_MEMBERSHIPS_BY_LOGIN)) {
                 stmt.setString(1, userLogin);
                 try (ResultSet rs = stmt.executeQuery()) {
                     while (rs.next()) {
@@ -172,7 +171,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                         }
 
                         if (targetRole != null) {
-                            ret.add(new Membership(project, targetRole));
+                            memberships.add(new Membership(project, targetRole));
                         } else {
                             log("Invalid role name {0} for {1} in project {2}", roleName, userLogin, project.getName());
                         }
@@ -185,11 +184,11 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         }
 
         // cache membership list
-        membership_cache.put(userLogin, ret);
-        return ret;
+        membership_cache.put(userLogin, memberships);
+        return memberships;
     }
 
-    private final static String SQL_GET_PCLASS = "SELECT Project_Class.name FROM Project "
+    private final static String SQL_GET_PROJCLASS_BY_PROJECT_NAME = "SELECT Project_Class.name FROM Project "
             + "LEFT JOIN Project_Class ON (Project.project_class_id = Project_Class._id) "
             + "WHERE Project.name=?";
 
@@ -200,7 +199,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 
             String pClassName = null;
             try (Connection conn = getConnection()) {
-                try (PreparedStatement stmt = conn.prepareStatement(SQL_GET_PCLASS)) {
+                try (PreparedStatement stmt = conn.prepareStatement(SQL_GET_PROJCLASS_BY_PROJECT_NAME)) {
                     stmt.setString(1, projectName);
                     try (ResultSet rs = stmt.executeQuery()) {
                         if (rs.next()) {
@@ -233,9 +232,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         return ret;
     }
 
-//    private final static DBAPITypeI MGX_DBAPI_TYPE = new DBAPIType("MGX");
-//    private final static DataSourceTypeI MGX_DS_TYPE = new DataSourceType("MGX");
-    private final static String LOAD_DATASOURCES = "SELECT Host.hostname AS host, Host.port AS port, "
+    private final static String SQL_LOAD_DATASOURCES_BY_PROJECT = "SELECT Host.hostname AS host, Host.port AS port, "
             + "DBMS_Type.name AS dbmsname, DBMS_Type.version_ AS dbmsver, "
             + "DataSource.name AS dsName, DataSource_Type.name AS dsTypeName, "
             + "DB_API_Type.name AS dbApiName "
@@ -252,10 +249,9 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
     private Collection<DataSourceI> loadDataSources(String projectName) throws SQLException {
 
         List<DataSourceI> datasources = new ArrayList<>(1);
-        
+
         try (Connection conn = getConnection()) {
-            try (PreparedStatement stmt = conn.prepareStatement(LOAD_DATASOURCES)) {
-                //stmt.setString(1, MGX_DS_TYPE.getName());
+            try (PreparedStatement stmt = conn.prepareStatement(SQL_LOAD_DATASOURCES_BY_PROJECT)) {
                 stmt.setString(1, projectName);
                 try (ResultSet rs = stmt.executeQuery()) {
                     while (rs.next()) {
@@ -324,7 +320,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         return ret;
     }
 
-    private final static String ROLES_BY_PCLASSNAME = "SELECT r.name FROM Role r "
+    private final static String SQL_ROLES_BY_PROJCLASSNAME = "SELECT r.name FROM Role r "
             + "LEFT JOIN Project_Class pc ON (r.project_class_id=pc._id) "
             + "WHERE pc.name=?";
 
@@ -332,7 +328,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         List<RoleI> ret = new ArrayList<>(3);
 
         try (Connection conn = getConnection()) {
-            try (PreparedStatement stmt = conn.prepareStatement(ROLES_BY_PCLASSNAME)) {
+            try (PreparedStatement stmt = conn.prepareStatement(SQL_ROLES_BY_PROJCLASSNAME)) {
                 stmt.setString(1, pClass.getName());
                 try (ResultSet rs = stmt.executeQuery()) {
                     while (rs.next()) {

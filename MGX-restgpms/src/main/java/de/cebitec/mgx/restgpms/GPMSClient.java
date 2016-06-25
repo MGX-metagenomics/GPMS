@@ -67,7 +67,7 @@ public class GPMSClient implements GPMSClientI {
             return "artificial REST datasource type";
         }
     };
-    
+
     public GPMSClient(String servername, String gpmsBaseURI) {
         this(servername, gpmsBaseURI, true);
     }
@@ -133,8 +133,19 @@ public class GPMSClient implements GPMSClientI {
     public Iterator<MembershipI> getMemberships() throws GPMSException {
         List<MembershipI> ret = new ArrayList<>();
         if (loggedIn()) {
-            ClientResponse response = getResource().path("GPMS").path("GPMSBean").path("listMemberships").get(ClientResponse.class);
-            if (Status.fromStatusCode(response.getStatus()) == Status.OK) {
+            ClientResponse response = null;
+            try {
+                response = getResource().path("GPMS").path("GPMSBean").path("listMemberships").get(ClientResponse.class);
+            } catch (ClientHandlerException ex) {
+                if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
+                    return getMemberships(); //retry
+                } else if (ex.getCause() != null && ex.getCause() instanceof UnknownHostException) {
+                    throw new GPMSException("Could not resolve server address. Check your internet connection.");
+                }
+                throw new GPMSException(ex.getCause().getMessage());
+            }
+
+            if (response != null && Status.fromStatusCode(response.getStatus()) == Status.OK) {
                 MembershipDTOList list = response.<MembershipDTOList>getEntity(MembershipDTOList.class);
                 for (MembershipDTO mdto : list.getMembershipList()) {
 
@@ -318,10 +329,7 @@ public class GPMSClient implements GPMSClientI {
         if (!Objects.equals(this.gpmsBaseURI, other.gpmsBaseURI)) {
             return false;
         }
-        if (!Objects.equals(this.servername, other.servername)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.servername, other.servername);
     }
 
 }

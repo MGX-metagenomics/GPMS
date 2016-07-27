@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>GPMS</artifactId>
+        <groupId>de.cebitec.gpms</groupId>
+        <version>1.1</version>
+    </parent>
+
+    <groupId>de.cebitec.gpms</groupId>
+    <artifactId>GPMS-glassfish3-realm</artifactId>
+    <name>GPMS SQL-based Glassfish 3.x JAAS Authentication Realm</name>
+    <packaging>bundle</packaging>
+    <version>1.1</version>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.glassfish.security</groupId>
+            <artifactId>security</artifactId>
+            <version>3.1.1</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.persistence</groupId>
+                    <artifactId>javax.persistence</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>19.0</version>
+        </dependency>
+        <dependency>
+            <groupId>de.cebitec.gpms</groupId>
+            <artifactId>GPMS-core-api</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>GPMS-model</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!--
+        <dependency>
+            <groupId>org.eclipse.persistence</groupId>
+            <artifactId>javax.persistence</artifactId>
+            <version>2.0.5</version>
+            <scope>provided</scope>
+        </dependency>
+        -->
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
+                        <Embed-Transitive>true</Embed-Transitive>
+                        <Export-Package>de.cebitec.gpms.appserv</Export-Package>
+                        <!-- <Import-Package>
+                            com.sun.appserv.connectors.internal.api, 
+                            com.sun.appserv.security, 
+                            com.sun.enterprise.security.auth.realm, 
+                            com.sun.enterprise.security.common,
+                            com.sun.enterprise.util.i18n,
+                            org.jvnet.hk2.annotations, 
+                            org.jvnet.hk2.component,
+                            javax.sql, 
+                            javax.naming, 
+                            javax.security.auth.login,
+                            de.cebitec.gpms.core, 
+                            de.cebitec.gpms.model,
+                            com.google.common.cache
+                        </Import-Package> -->
+                    </instructions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

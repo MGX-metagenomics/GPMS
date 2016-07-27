@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    
     <groupId>de.cebitec.gpms</groupId>
     <artifactId>GPMS</artifactId>
     <version>1.1</version>
     <packaging>pom</packaging>
+    
     <name>GPMS</name>
+    
     <build>
         <plugins>   
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.5.1</version>
+                <version>3.3</version>
                 <configuration>
                     <compilerArgument>-Xlint:all</compilerArgument>
                     <source>1.7</source>
@@ -20,6 +23,12 @@
             </plugin>
         </plugins>
     </build>
+    
+    <properties>
+        <netbeans.version>RELEASE81</netbeans.version>
+        <brandingToken>gpms</brandingToken>
+    </properties>
+    
     <modules>
         <module>GPMS-core-api</module>
         <module>GPMS-db-api</module>
@@ -29,10 +38,13 @@
         <module>GPMS-db-model</module>
         <module>GPMS-sql-loader</module>
         <module>GPMS-ldap-loader</module>
-        <module>GPMS-glassfish3-realm</module>
+        <module>GPMS-glassfish3-sql-realm</module>
+        <module>GPMS-glassfish3-ldap-realm</module>
         <module>GPMS-Nodesupport</module>
         <module>GPMS-Server</module>
         <module>MGX-restgpms</module>
+        <module>GPMS-Actions</module>
+        <module>GPMS-Nodes</module>
     </modules>
 
     <distributionManagement>

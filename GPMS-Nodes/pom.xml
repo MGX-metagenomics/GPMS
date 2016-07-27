@@ -12,6 +12,10 @@
     <artifactId>GPMS-Nodes</artifactId>
     <packaging>nbm</packaging>
     
+    <prerequisites>
+        <maven>3.0</maven>
+    </prerequisites> 
+    
     <build>
         <plugins>
             <plugin>

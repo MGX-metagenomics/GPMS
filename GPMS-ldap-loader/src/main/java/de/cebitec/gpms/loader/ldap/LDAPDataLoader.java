@@ -491,7 +491,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                 conn.close();
             }
         }
-        throw new GPMSException("No such project class: " + projClassDN.toString());
+        throw new GPMSException("No such project class: " + projClassDN);
     }
 
     Collection<RoleI> loadRoles(ProjectClassI pClass) throws GPMSException {
@@ -605,8 +605,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         return ldapPool.getConnection();
     }
 
-    private final static Logger logger = Logger.getLogger(LDAPDataLoader.class
-            .getName());
+    private final static Logger logger = Logger.getLogger(LDAPDataLoader.class.getName());
 
     private void log(String msg) {
         logger.log(Level.INFO, msg);

@@ -72,7 +72,7 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
                 currentMaster.set(jpaMaster);
 
                 if (emf == null) {
-                    emf = EMFNameResolver.createEMF(mbr, ProxyDataSourceI.JNDI_NAME); //, "MGX-PU");
+                    emf = EMFNameResolver.createEMF(mbr, ProxyDataSourceI.JNDI_NAME);
                 }
                 jpaMaster.setEntityManagerFactory(emf);
 

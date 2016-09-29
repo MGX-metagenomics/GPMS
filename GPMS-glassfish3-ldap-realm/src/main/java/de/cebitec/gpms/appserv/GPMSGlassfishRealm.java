@@ -2,18 +2,22 @@ package de.cebitec.gpms.appserv;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.sun.appserv.connectors.internal.api.ConnectorRuntime;
 import com.sun.appserv.security.AppservRealm;
 import com.sun.enterprise.security.auth.realm.BadRealmException;
 import com.sun.enterprise.security.auth.realm.InvalidOperationException;
 import com.sun.enterprise.security.auth.realm.NoSuchRealmException;
 import com.sun.enterprise.security.auth.realm.NoSuchUserException;
-import com.sun.enterprise.security.common.Util;
+import com.unboundid.ldap.sdk.BindResult;
+import com.unboundid.ldap.sdk.Filter;
+import com.unboundid.ldap.sdk.LDAPConnectionPool;
+import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.ReadOnlySearchRequest;
+import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.ldap.sdk.RoundRobinServerSet;
+import com.unboundid.ldap.sdk.SearchRequest;
+import com.unboundid.ldap.sdk.SearchResult;
+import com.unboundid.ldap.sdk.SearchScope;
 import de.cebitec.gpms.core.UserI;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -21,8 +25,6 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
 import org.jvnet.hk2.annotations.Service;
 
 /**
@@ -39,12 +41,14 @@ public class GPMSGlassfishRealm extends AppservRealm {
     private static final Logger log = Logger.getLogger("de.cebitec.gpms.appserv");
     // Descriptive string of the authentication type of this realm.
     public static final String AUTH_TYPE = "gpms";
-    public static final String PARAM_DATASOURCE_JNDI = "datasource-jndi";
-    public static final String PARAM_DB_USER = "db-user";
-    public static final String PARAM_DB_PASSWORD = "db-password";
-    private ConnectorRuntime cr;
-    private final static String passwordQuery = "call authenticate(?, ?)";
-    private DataSource gpmsDataSource = null;
+    //
+    public static final String PARAM_DIRURL = "directory";
+    public static final String PARAM_USERDN = "base-dn";
+    public static final String PARAM_SEARCH_FILTER = "search-filter";
+    public static final String PARAM_POOLSIZE = "pool-size";
+    //
+    private LDAPConnectionPool ldapPool;
+    //
     private Cache<UserI, String[]> authcache = null;
 
     @Override
@@ -52,9 +56,10 @@ public class GPMSGlassfishRealm extends AppservRealm {
         super.init(props);
 
         String jaasCtx = props.getProperty(AppservRealm.JAAS_CONTEXT_PARAM);
-        String dbUser = props.getProperty(PARAM_DB_USER);
-        String dbPassword = props.getProperty(PARAM_DB_PASSWORD);
-        String dsJndi = props.getProperty(PARAM_DATASOURCE_JNDI);
+        String directory = props.getProperty(PARAM_DIRURL);
+        String basedn = props.getProperty(PARAM_USERDN);
+        String filter = props.getProperty(PARAM_SEARCH_FILTER);
+        String poolSize = props.getProperty(PARAM_POOLSIZE);
 
         /*
          * Set the jaas context, otherwise server doesn't indentify the login module.
@@ -69,33 +74,81 @@ public class GPMSGlassfishRealm extends AppservRealm {
             throw new BadRealmException(msg);
         }
 
-        if (dsJndi == null) {
-            String msg = sm.getString("realm.missingprop", PARAM_DATASOURCE_JNDI, "GPMSRealm");
+        if (directory == null) {
+            String msg = sm.getString("realm.missingprop", PARAM_DIRURL, "GPMSRealm");
+            throw new BadRealmException(msg);
+        }
+        if (basedn == null) {
+            String msg = sm.getString("realm.missingprop", PARAM_USERDN, "GPMSRealm");
+            throw new BadRealmException(msg);
+        }
+        if (filter == null) {
+            String msg = sm.getString("realm.missingprop", PARAM_SEARCH_FILTER, "GPMSRealm");
+            throw new BadRealmException(msg);
+        }
+        if (poolSize == null) {
+            String msg = sm.getString("realm.missingprop", PARAM_POOLSIZE, "GPMSRealm");
+            throw new BadRealmException(msg);
+        }
+
+        int numConnections;
+        try {
+            numConnections = Integer.parseInt(poolSize);
+        } catch (NumberFormatException nfe) {
+            String msg = sm.getString("realm.missingprop", PARAM_POOLSIZE, "GPMSRealm");
             throw new BadRealmException(msg);
         }
 
         this.setProperty(AppservRealm.JAAS_CONTEXT_PARAM, jaasCtx);
+        this.setProperty(PARAM_DIRURL, directory);
+        this.setProperty(PARAM_USERDN, basedn);
+        this.setProperty(PARAM_SEARCH_FILTER, filter);
+        this.setProperty(PARAM_POOLSIZE, poolSize);
 
-        if (dbUser != null && dbPassword != null) {
-            log.log(Level.FINE, "Setting username and password.");
-            this.setProperty(PARAM_DB_USER, dbUser);
-            this.setProperty(PARAM_DB_PASSWORD, dbPassword);
+        String[] servers = directory.split(" ");
+
+        String[] hosts = new String[servers.length];
+        int[] ports = new int[servers.length];
+
+        for (int i = 0; i < servers.length; i++) {
+            String curServer = servers[i];
+            int port = 0;
+            if (curServer.startsWith("ldaps://")) {
+                curServer = curServer.replaceFirst("ldaps://", "");
+                port = 636;
+            }
+            if (curServer.startsWith("ldap://")) {
+                curServer = curServer.replaceFirst("ldap://", "");
+                port = 389;
+            }
+
+            // attempt to parse port after final ':'
+            if (curServer.contains(":")) {
+                String[] components = curServer.split(":");
+                try {
+                    port = Integer.parseInt(components[components.length - 1]);
+                } catch (NumberFormatException nfe) {
+                }
+            }
+
+            //fallback to default port
+            if (port == 0) {
+                port = 389;
+            }
+            hosts[i] = curServer;
+            ports[i] = port;
         }
 
-        this.setProperty(PARAM_DATASOURCE_JNDI, dsJndi);
+        if (hosts == null || hosts.length == 0) {
+            throw new BadRealmException("Empty host list");
+        }
 
-        log.log(Level.FINE, "GPMSRealm : {0} = {1}, {2} = {3}, {4} = {5}",
-                new String[]{AppservRealm.JAAS_CONTEXT_PARAM, jaasCtx,
-                    PARAM_DATASOURCE_JNDI, dsJndi,
-                    PARAM_DB_USER, dbUser});
-
-        cr = Util.getDefaultHabitat().getByContract(ConnectorRuntime.class);
-
-        if (gpmsDataSource == null) {
-            try {
-                gpmsDataSource = (DataSource) cr.lookupNonTxResource(getProperty(PARAM_DATASOURCE_JNDI), false);
-            } catch (NamingException ex) {
-            }
+        RoundRobinServerSet serverSet = new RoundRobinServerSet(hosts, ports);
+        try {
+            ldapPool = new LDAPConnectionPool(serverSet, null, numConnections);
+        } catch (LDAPException ex) {
+            log.log(Level.SEVERE, null, ex);
+            return;
         }
 
         //
@@ -132,10 +185,9 @@ public class GPMSGlassfishRealm extends AppservRealm {
 
         String[] ret = authcache.getIfPresent(curUser);
         if (ret != null) {
-            //log.info("realm cache hit");
             return ret; // cache hit
         } else {
-            ret = authenticate(login, _passwd);
+            ret = authenticate(login, String.valueOf(_passwd));
             if (ret != null) {
                 // only add to cache if successfully authenticated,
                 // otherwise a malicious user could fill up our memory
@@ -145,16 +197,14 @@ public class GPMSGlassfishRealm extends AppservRealm {
         }
         return ret;
     }
-    
+
     private final static String[] authResult = new String[]{"gpmsuser"};
 
-    private String[] authenticate(String username, char[] password) {
+    private String[] authenticate(String username, String password) {
         boolean authenticated = isUserValid(username, password);
         if (authenticated) {
-//            log.fine("Authentication successful");
             return authResult;
         } else {
-//            log.fine("Authentication failed");
             return null;
         }
     }
@@ -166,49 +216,37 @@ public class GPMSGlassfishRealm extends AppservRealm {
      * @param password user's password
      * @return true if valid
      */
-    private boolean isUserValid(String login, char[] password) {
-        boolean valid = false;
+    private boolean isUserValid(String login, String password) {
 
-        try (Connection connection = getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement(passwordQuery)) {
-                statement.setString(1, login);
-                statement.setString(2, new String(password));
-                try (ResultSet rs = statement.executeQuery()) {
-                    if (rs.next()) {
-                        if (rs.getInt(1) == 1) {
-                            valid = true;
-                        }
-                    }
-                }
+        String filter = this.getProperty(PARAM_SEARCH_FILTER);
+        filter = filter.replaceAll("%s", login);
+
+        String userDN;
+        try {
+            Filter userFilter = Filter.create(filter);
+            ReadOnlySearchRequest userReq = new SearchRequest(this.getProperty(PARAM_USERDN), SearchScope.SUB, userFilter, "dn");
+            final SearchResult userResult = ldapPool.search(userReq);
+            if (userResult.getEntryCount() == 0) {
+                return false; // invalid login
+            } else if (userResult.getEntryCount() > 1) {
+                log.log(Level.SEVERE, "Unexpected number of results: {0} for login {1}", new Object[]{userResult.getEntryCount(), login});
+                return false;
             }
-        } catch (SQLException ex) {
-            _logger.log(Level.SEVERE, "jdbcrealm.invaliduserreason", new String[]{login, ex.toString()});
-            log.log(Level.SEVERE, "Cannot validate user", ex);
-        } catch (NamingException ex) {
-            _logger.log(Level.SEVERE, "jdbcrealm.invaliduser", login);
-            log.log(Level.SEVERE, "Cannot lookup data source", ex);
-        }
-        return valid;
-    }
-
-    /**
-     * Return a connection from the properties configured
-     *
-     * @return a connection
-     */
-    private Connection getConnection() throws NamingException, SQLException {
-
-        final String dbUser = getProperty(PARAM_DB_USER);
-        final String dbPassword = getProperty(PARAM_DB_PASSWORD);
-
-        if (gpmsDataSource == null) {
-            gpmsDataSource = (DataSource) cr.lookupNonTxResource(getProperty(PARAM_DATASOURCE_JNDI), false);
+            userDN = userResult.getSearchEntries().get(0).getDN();
+        } catch (LDAPException ex) {
+            log.log(Level.SEVERE, null, ex);
+            return false;
         }
 
-        if (dbUser != null && dbPassword != null) {
-            return gpmsDataSource.getConnection(dbUser, dbPassword);
-        } else {
-            return gpmsDataSource.getConnection();
+        if (userDN == null || userDN.isEmpty()) {
+            return false;
+        }
+
+        try {
+            BindResult result = ldapPool.bindAndRevertAuthentication(userDN, password);
+            return result.getResultCode().equals(ResultCode.SUCCESS);
+        } catch (LDAPException ex) {
+            return false;
         }
     }
 

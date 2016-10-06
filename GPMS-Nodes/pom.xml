@@ -24,6 +24,7 @@
                 <version>3.14</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <cluster>${brandingToken}</cluster>
                     <useOSGiDependencies>true</useOSGiDependencies>
                     <publicPackages>
                         <publicPackage>de.cebitec.gpms.node</publicPackage>

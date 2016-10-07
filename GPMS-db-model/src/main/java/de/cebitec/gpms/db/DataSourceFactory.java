@@ -7,8 +7,6 @@ import de.cebitec.gpms.core.MembershipI;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -42,7 +40,7 @@ public class DataSourceFactory {
         cfg.setConnectionTimeout(1500); // ms
         cfg.setMaxLifetime(1000 * 60 * 2);  // 2 mins
         cfg.setIdleTimeout(1000 * 60);
-        cfg.setLeakDetectionThreshold(20000); // 20 sec before in-use connection is considered leaked
+        cfg.setLeakDetectionThreshold(30000); // 30 sec before in-use connection is considered leaked
 
         return new HikariDataSource(cfg);
     }

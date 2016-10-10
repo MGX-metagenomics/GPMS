@@ -296,19 +296,21 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 
                 if (in_section) {
                     line = line.trim();
-                    String[] strings = line.split(":");
-                    if (strings.length != 3) {
-                        log("Unparseable line in " + cfgFileName + ": " + line);
-                        throw new GPMSException("Invalid format for application configuration file.");
+                    if (line.contains(":") && !line.startsWith("#")) {
+                        String[] strings = line.split(":");
+                        if (strings.length != 3) {
+                            log("Unparseable line in " + cfgFileName + ": " + line);
+                            throw new GPMSException("Invalid format for application configuration file.");
+                        }
+
+                        Role r = new Role(pClass, strings[0]);
+                        pClass.getRoles().add(r);
+
+                        String dbUser = strings[1];
+                        String dbPass = strings[2];
+                        ret.add(r);
+                        dbAccess.put(r, new String[]{dbUser, dbPass});
                     }
-
-                    Role r = new Role(pClass, strings[0]);
-                    pClass.getRoles().add(r);
-
-                    String dbUser = strings[1];
-                    String dbPass = strings[2];
-                    ret.add(r);
-                    dbAccess.put(r, new String[]{dbUser, dbPass});
                 }
             }
         } catch (IOException ex) {

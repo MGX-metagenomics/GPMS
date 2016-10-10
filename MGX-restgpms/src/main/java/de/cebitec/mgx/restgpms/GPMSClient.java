@@ -95,7 +95,10 @@ public class GPMSClient implements GPMSClientI {
     }
 
     @Override
-    public Iterator<ProjectClassI> getProjectClasses() {
+    public Iterator<ProjectClassI> getProjectClasses() throws GPMSException {
+        if (!loggedIn()) {
+            throw new GPMSException("Not logged in.");
+        }
         List<ProjectClassI> ret = new LinkedList<>();
         ClientResponse response = getResource().path("GPMS").path("GPMSBean").path("listProjectClasses").get(ClientResponse.class);
         if (Status.fromStatusCode(response.getStatus()) == Status.OK) {
@@ -111,20 +114,17 @@ public class GPMSClient implements GPMSClientI {
 
                 ret.add(pClass);
             }
-        } else {
-//            error = Status.fromStatusCode(response.getStatus()).getReasonPhrase();
-            return null;
         }
         return ret.iterator();
     }
 
     @Override
-    public RESTMasterI createMaster(final MembershipI m) {
+    public RESTMasterI createMaster(final MembershipI m) throws GPMSException {
         if (!loggedIn()) {
-            throw new IllegalArgumentException("Not logged in.");
+            throw new GPMSException("Not logged in.");
         }
         if (m == null) {
-            throw new IllegalArgumentException("REST MembershipI is null");
+            throw new GPMSException("REST MembershipI is null");
         }
         return new RESTMaster(this, m, user);
     }
@@ -288,7 +288,10 @@ public class GPMSClient implements GPMSClientI {
     }
 
     @Override
-    public final UserI getUser() {
+    public final UserI getUser() throws GPMSException {
+        if (!loggedIn()) {
+            throw new GPMSException("Not logged in.");
+        }
         return user;
     }
 

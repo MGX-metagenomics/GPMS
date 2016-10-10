@@ -10,6 +10,7 @@ import de.cebitec.gpms.core.MasterI;
 import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
 import de.cebitec.gpms.core.ProjectI;
+import de.cebitec.gpms.core.RoleI;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -17,6 +18,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Assume;
@@ -55,6 +59,22 @@ public class GPMSTest {
     }
 
     @Test
+    public void getProjectClassesLoggedOut() {
+        System.out.println("getProjectClassesLoggedOut");
+        GPMSClient gpms = TestMaster.get();
+        Iterator<ProjectClassI> projectClasses = null;
+        try {
+            projectClasses = gpms.getProjectClasses();
+        } catch (GPMSException ex) {
+            if ("Not logged in.".equals(ex.getMessage())) {
+                return;
+            }
+            fail(ex.getMessage());
+        }
+        assertNull(projectClasses);
+    }
+
+    @Test
     public void testGetProjectClasses() {
         System.out.println("getProjectClasses");
         GPMSClient gpms = TestMaster.get();
@@ -63,12 +83,21 @@ public class GPMSTest {
         } catch (GPMSException ex) {
             fail(ex.getMessage());
         }
-        Iterator<ProjectClassI> projectClasses = gpms.getProjectClasses();
+        Iterator<ProjectClassI> projectClasses = null;
+        try {
+            projectClasses = gpms.getProjectClasses();
+        } catch (GPMSException ex) {
+            fail(ex.getMessage());
+        }
         assertNotNull(projectClasses);
         int cnt = 0;
         while (projectClasses.hasNext()) {
             ProjectClassI pc = projectClasses.next();
             assertEquals("MGX", pc.getName());
+            Set<RoleI> roles = pc.getRoles();
+            for (RoleI role : roles) {
+                System.out.println(role.getName());
+            }
             assertEquals(3, pc.getRoles().size()); // user, admin, guest
             cnt++;
         }
@@ -122,12 +151,20 @@ public class GPMSTest {
     }
 
     @Test
+    public void testGetMembershipsLoggedOut() throws GPMSException {
+        System.out.println("testGetMembershipsLoggedOut");
+        GPMSClient gpms = TestMaster.get();
+        Iterator<MembershipI> memberships = gpms.getMemberships();
+        assertNotNull(memberships);
+        assertFalse(memberships.hasNext());
+    }
+
+    @Test
     public void testRESTDataSource() throws GPMSException {
         System.out.println("testRESTDataSource");
         GPMSClient gpms = TestMaster.get();
         gpms.login("mgx_unittestRO", "gut-isM5iNt");
         Iterator<MembershipI> memberships = gpms.getMemberships();
-        int cnt = 0;
         MasterI master = null;
         while (memberships.hasNext()) {
             MembershipI m = memberships.next();

@@ -48,9 +48,6 @@ public class ProjectNodeFactory extends ChildFactory<MembershipI> implements Nod
         tmpData.clear();
         while (iter != null && iter.hasNext()) {
             MembershipI m = iter.next();
-//            if ("MGX".equals(m.getProject().getProjectClass().getName())) {
-//                tmpData.add(m);
-//            }
             if (GPMSNodeSupport.isSupported(m)) {
                 tmpData.add(m);
             }
@@ -63,8 +60,12 @@ public class ProjectNodeFactory extends ChildFactory<MembershipI> implements Nod
     @Override
     protected Node createNodeForKey(MembershipI m) {
         Node node = null;
-        if (GPMSNodeSupport.isSupported(m)) {
-            node = GPMSNodeSupport.createProjectNode(gpmsclient.createMaster(m));
+        if (gpmsclient.loggedIn() && GPMSNodeSupport.isSupported(m)) {
+            try {
+                node = GPMSNodeSupport.createProjectNode(gpmsclient.createMaster(m));
+            } catch (GPMSException ex) {
+                Exceptions.printStackTrace(ex);
+            }
             if (node != null) {
                 node.addNodeListener(this);
             }

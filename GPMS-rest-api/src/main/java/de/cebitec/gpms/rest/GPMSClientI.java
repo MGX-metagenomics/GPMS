@@ -15,15 +15,15 @@ public interface GPMSClientI {
 
     public final static String PROP_LOGGEDIN = "gpmsClient_loggedIn";
 
-    public UserI getUser();
+    public UserI getUser() throws GPMSException;
 
     public String getBaseURI();
 
     public String getServerName();
 
-    public Iterator<ProjectClassI> getProjectClasses();
+    public Iterator<ProjectClassI> getProjectClasses() throws GPMSException;
 
-    RESTMasterI createMaster(MembershipI m);
+    RESTMasterI createMaster(MembershipI m) throws GPMSException;
 
     Iterator<MembershipI> getMemberships() throws GPMSException;
 

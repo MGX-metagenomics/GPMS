@@ -25,13 +25,15 @@ public class ServerNode extends AbstractNode implements PropertyChangeListener {
     public ServerNode(GPMSClientI client) {
         super(Children.create(new ProjectNodeFactory(client), true), Lookups.singleton(client));
         this.gpmsclient = client;
-        
+
         super.setDisplayName(gpmsclient.getServerName());
         setIconBaseWithExtension("de/cebitec/gpms/node/Server.png");
-        
+
         UserI user = null;
         try {
-            user = gpmsclient.getUser();
+            if (gpmsclient.loggedIn()) {
+                user = gpmsclient.getUser();
+            }
         } catch (GPMSException ex) {
             Exceptions.printStackTrace(ex);
         }

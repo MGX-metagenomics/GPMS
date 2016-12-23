@@ -110,10 +110,6 @@ public class Jersey1RESTAccess implements RESTAccessI {
         this.resource = appServer.getURL();
     }
 
-    private WebResource getWebResource() {
-        return client.resource(resource);
-    }
-
     /**
      *
      * @param <U>
@@ -151,12 +147,19 @@ public class Jersey1RESTAccess implements RESTAccessI {
     @Override
     public final void put(Object obj, final String... path) throws RESTException {
         WebResource.Builder buildPath = buildPath(path);
+        put(obj, buildPath, numRetriesAllowed);
+    }
+
+    private void put(Object obj, WebResource.Builder buildPath, int numRetries) throws RESTException {
         try {
             ClientResponse res = buildPath.put(ClientResponse.class, obj);
             catchException(res);
         } catch (ClientHandlerException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
-                put(obj, path); // retry
+                if (numRetries == 0) {
+                    throw ex;
+                }
+                put(obj, buildPath, numRetries - 1); // retry
             } else if (ex.getCause() != null && ex.getCause() instanceof Exception) {
                 throw new RESTException(ex.getCause().getMessage());
             } else {
@@ -168,12 +171,21 @@ public class Jersey1RESTAccess implements RESTAccessI {
     @Override
     public final void get(final String... path) throws RESTException {
         //System.err.println("GET uri: " +getWebResource().path(path).getURI().toASCIIString());
+        WebResource.Builder buildPath = buildPath(path);
+        get(buildPath, numRetriesAllowed);
+
+    }
+
+    private void get(WebResource.Builder buildPath, int numRetries) throws RESTException {
         try {
-            ClientResponse res = buildPath(path).get(ClientResponse.class);
+            ClientResponse res = buildPath.get(ClientResponse.class);
             catchException(res);
         } catch (ClientHandlerException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
-                get(path); // retry
+                if (numRetries == 0) {
+                    throw ex;
+                }
+                get(buildPath, numRetries - 1); // retry
             } else if (ex.getCause() != null && ex.getCause() instanceof Exception) {
                 throw new RESTException(ex.getCause().getMessage());
             } else {
@@ -184,13 +196,21 @@ public class Jersey1RESTAccess implements RESTAccessI {
 
     @Override
     public final <U> U get(Class<U> c, final String... path) throws RESTException {
+        WebResource.Builder buildPath = buildPath(path);
+        return get(c, buildPath, numRetriesAllowed);
+    }
+
+    private <U> U get(Class<U> c, WebResource.Builder buildPath, int numRetries) throws RESTException {
         try {
-            ClientResponse res = buildPath(path).get(ClientResponse.class);
+            ClientResponse res = buildPath.get(ClientResponse.class);
             catchException(res);
             return res.<U>getEntity(c);
         } catch (ClientHandlerException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
-                return get(c, path); // retry
+                if (numRetries == 0) {
+                    throw ex;
+                }
+                return get(c, buildPath, numRetries - 1); // retry
             } else if (ex.getCause() != null && ex.getCause() instanceof Exception) {
                 throw new RESTException(ex.getCause().getMessage());
             } else {
@@ -202,13 +222,21 @@ public class Jersey1RESTAccess implements RESTAccessI {
     @Override
     public final <U> U delete(Class<U> clazz, final String... path) throws RESTException {
         //System.err.println("DELETE uri: " +getWebResource().path(path).getURI().toASCIIString());
+        WebResource.Builder buildPath = buildPath(path);
+        return delete(clazz, buildPath, numRetriesAllowed);
+    }
+
+    private <U> U delete(Class<U> clazz, WebResource.Builder buildPath, int numRetries) throws RESTException {
         try {
-            ClientResponse res = buildPath(path).delete(ClientResponse.class);
+            ClientResponse res = buildPath.delete(ClientResponse.class);
             catchException(res);
             return res.<U>getEntity(clazz);
         } catch (ClientHandlerException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
-                return delete(clazz, path); // retry
+                if (numRetries == 0) {
+                    throw ex;
+                }
+                return delete(clazz, buildPath, numRetries - 1); // retry
             } else if (ex.getCause() != null && ex.getCause() instanceof Exception) {
                 throw new RESTException(ex.getCause().getMessage());
             } else {
@@ -220,12 +248,20 @@ public class Jersey1RESTAccess implements RESTAccessI {
     @Override
     public final void delete(final String... path) throws RESTException {
         //System.err.println("DELETE uri: " +getWebResource().path(path).getURI().toASCIIString());
+        WebResource.Builder buildPath = buildPath(path);
+        delete(buildPath, numRetriesAllowed);
+    }
+
+    private void delete(WebResource.Builder buildPath, int numRetries) throws RESTException {
         try {
-            ClientResponse res = buildPath(path).delete(ClientResponse.class);
+            ClientResponse res = buildPath.delete(ClientResponse.class);
             catchException(res);
         } catch (ClientHandlerException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
-                delete(path); // retry
+                if (numRetries == 0) {
+                    throw ex;
+                }
+                delete(buildPath, numRetries - 1); // retry
             } else if (ex.getCause() != null && ex.getCause() instanceof Exception) {
                 throw new RESTException(ex.getCause().getMessage());
             } else {
@@ -236,12 +272,20 @@ public class Jersey1RESTAccess implements RESTAccessI {
 
     @Override
     public final void post(Object obj, final String... path) throws RESTException {
+        WebResource.Builder buildPath = buildPath(path);
+        post(obj, buildPath, numRetriesAllowed);
+    }
+
+    private void post(Object obj, WebResource.Builder buildPath, int numRetries) throws RESTException {
         try {
-            ClientResponse res = buildPath(path).post(ClientResponse.class, obj);
+            ClientResponse res = buildPath.post(ClientResponse.class, obj);
             catchException(res);
         } catch (ClientHandlerException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
-                post(obj, path);
+                if (numRetries == 0) {
+                    throw ex;
+                }
+                post(obj, buildPath, numRetries - 1);  // retry
             } else if (ex.getCause() != null && ex.getCause() instanceof Exception) {
                 throw new RESTException(ex.getCause().getMessage());
             } else {
@@ -252,13 +296,21 @@ public class Jersey1RESTAccess implements RESTAccessI {
 
     @Override
     public <U> U post(Object obj, Class<U> targetClass, String... path) throws RESTException {
+        WebResource.Builder buildPath = buildPath(path);
+        return post(obj, targetClass, buildPath, numRetriesAllowed);
+    }
+
+    private <U> U post(Object obj, Class<U> targetClass, WebResource.Builder buildPath, int numRetries) throws RESTException {
         try {
-            ClientResponse res = buildPath(path).post(ClientResponse.class, obj);
+            ClientResponse res = buildPath.post(ClientResponse.class, obj);
             catchException(res);
             return res.<U>getEntity(targetClass);
         } catch (ClientHandlerException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
-                return post(obj, targetClass, path);
+                if (numRetries == 0) {
+                    throw ex;
+                }
+                return post(obj, targetClass, buildPath, numRetries - 1); //retry
             } else if (ex.getCause() != null && ex.getCause() instanceof Exception) {
                 throw new RESTException(ex.getCause().getMessage());
             } else {
@@ -268,7 +320,7 @@ public class Jersey1RESTAccess implements RESTAccessI {
     }
 
     private WebResource.Builder buildPath(String... pathComponents) {
-        WebResource wr = getWebResource();
+        WebResource wr = client.resource(resource);
         try {
             for (String s : pathComponents) {
                 wr = wr.path(URLEncoder.encode(s, "UTF-8"));

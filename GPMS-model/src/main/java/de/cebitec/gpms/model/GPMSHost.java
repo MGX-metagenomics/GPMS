@@ -6,6 +6,7 @@
 package de.cebitec.gpms.model;
 
 import de.cebitec.gpms.core.HostI;
+import java.util.Objects;
 
 /**
  *
@@ -31,4 +32,29 @@ public class GPMSHost implements HostI {
         return port;
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 41 * hash + Objects.hashCode(this.host);
+        hash = 41 * hash + this.port;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final GPMSHost other = (GPMSHost) obj;
+        if (this.port != other.port) {
+            return false;
+        }
+        return Objects.equals(this.host, other.host);
+    }
 }

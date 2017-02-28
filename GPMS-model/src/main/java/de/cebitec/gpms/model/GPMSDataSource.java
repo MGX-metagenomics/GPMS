@@ -7,6 +7,7 @@ package de.cebitec.gpms.model;
 
 import de.cebitec.gpms.core.DataSourceI;
 import de.cebitec.gpms.core.DataSourceTypeI;
+import java.util.Objects;
 
 /**
  *
@@ -14,8 +15,8 @@ import de.cebitec.gpms.core.DataSourceTypeI;
  */
 public class GPMSDataSource implements DataSourceI {
 
-    private final String name;
-    private final DataSourceTypeI dsType;
+    protected final String name;
+    protected final DataSourceTypeI dsType;
 
     public GPMSDataSource(String name, DataSourceTypeI dsType) {
         if (name == null) {
@@ -38,4 +39,29 @@ public class GPMSDataSource implements DataSourceI {
         return name;
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 89 * hash + Objects.hashCode(this.name);
+        hash = 89 * hash + Objects.hashCode(this.dsType);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final GPMSDataSource other = (GPMSDataSource) obj;
+        if (!Objects.equals(this.name, other.name)) {
+            return false;
+        }
+        return Objects.equals(this.dsType, other.dsType);
+    }
 }

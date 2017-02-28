@@ -41,11 +41,6 @@ public class DBAPIType implements DBAPITypeI {
             return false;
         }
         final DBAPIType other = (DBAPIType) obj;
-        if (!Objects.equals(this.apiType, other.apiType)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.apiType, other.apiType);
     }
-
-    
 }

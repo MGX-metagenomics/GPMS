@@ -6,6 +6,7 @@
 package de.cebitec.gpms.model;
 
 import de.cebitec.gpms.core.DBMSTypeI;
+import java.util.Objects;
 
 /**
  *
@@ -31,4 +32,29 @@ public class DBMSType implements DBMSTypeI {
         return name;
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 59 * hash + Objects.hashCode(this.name);
+        hash = 59 * hash + Objects.hashCode(this.version);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final DBMSType other = (DBMSType) obj;
+        if (!Objects.equals(this.name, other.name)) {
+            return false;
+        }
+        return Objects.equals(this.version, other.version);
+    }
 }

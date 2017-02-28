@@ -41,11 +41,6 @@ public class DataSourceType implements DataSourceTypeI {
             return false;
         }
         final DataSourceType other = (DataSourceType) obj;
-        if (!Objects.equals(this.name, other.name)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.name, other.name);
     }
-
-    
 }

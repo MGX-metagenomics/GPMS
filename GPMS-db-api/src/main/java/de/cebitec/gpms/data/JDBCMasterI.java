@@ -6,8 +6,7 @@
 package de.cebitec.gpms.data;
 
 import de.cebitec.gpms.core.MasterI;
-import de.cebitec.gpms.core.DataSource_DBI;
-import javax.sql.DataSource;
+import de.cebitec.gpms.util.GPMSManagedDataSourceI;
 
 /**
  *
@@ -15,8 +14,8 @@ import javax.sql.DataSource;
  */
 public interface JDBCMasterI extends MasterI {
 
-    public DataSource getDataSource();
+    public GPMSManagedDataSourceI getDataSource();
     
-    public DataSource_DBI getGPMSDatasource();
+//    public DataSource_DBI getGPMSDatasource();
     
 }

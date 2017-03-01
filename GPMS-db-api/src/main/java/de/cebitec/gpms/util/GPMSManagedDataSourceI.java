@@ -5,7 +5,6 @@
  */
 package de.cebitec.gpms.util;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
@@ -23,5 +22,7 @@ public interface GPMSManagedDataSourceI extends DataSource, AutoCloseable {
 
     @Override
     public GPMSManagedConnectionI getConnection() throws SQLException;
+    
+    public void subscribe();
     
 }

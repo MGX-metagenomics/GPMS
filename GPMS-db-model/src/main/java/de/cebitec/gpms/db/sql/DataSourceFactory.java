@@ -1,4 +1,4 @@
-package de.cebitec.gpms.db;
+package de.cebitec.gpms.db.sql;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

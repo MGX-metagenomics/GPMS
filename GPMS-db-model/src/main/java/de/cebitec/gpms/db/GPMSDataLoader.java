@@ -55,11 +55,11 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
             currentMaster.set(simpleMaster);
             return (T) simpleMaster;
         }
-        
+
         /*
         *  all other master instances require a db connection
         * 
-        */
+         */
 
         //
         // find an appropriate GPMS datasource to work with
@@ -76,7 +76,7 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
         DataSource_DBI dsDB = (DataSource_DBI) selectedGPMSdataSource;
 
         //
-        // find the corresponding SQL datasource (or create a new one)
+        // find the backing SQL datasource (or create a new one)
         //
         DataSource sqlDatasource = dsProvider.getDataSource(dsDB);
         if (sqlDatasource == null) {
@@ -91,7 +91,7 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
         }
         // add to cache
         GPMSManagedDataSourceI gpmsManagedDataSource = dsProvider.registerDataSource(dsDB, sqlDatasource);
-
+        
         //
         // create plain JDBC or JPA master depending on requested master class
         //
@@ -111,6 +111,11 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
             currentMaster.set(jdbcMaster);
             return (T) jdbcMaster;
         }
+    }
+    
+    @Override
+    public  void dispose() {
+        dsProvider.dispose();
     }
 
 }

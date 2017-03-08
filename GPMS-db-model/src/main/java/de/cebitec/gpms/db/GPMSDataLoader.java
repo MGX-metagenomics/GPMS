@@ -39,7 +39,7 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
     }
 
     @Override
-    public <T extends MasterI> void setCurrentMaster(T master) {
+    public void setCurrentMaster(MasterI master) {
         currentMaster.set(master);
     }
 

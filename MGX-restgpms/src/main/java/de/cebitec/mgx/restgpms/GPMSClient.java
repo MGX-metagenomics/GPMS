@@ -66,6 +66,26 @@ public class GPMSClient implements GPMSClientI {
         public String getName() {
             return "artificial REST datasource type";
         }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 97 * hash + Objects.hashCode(this.getName());
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final DataSourceTypeI other = (DataSourceTypeI) obj;
+            return Objects.equals(this.getName(), other.getName());
+        }
+
     };
 
     public GPMSClient(String servername, String gpmsBaseURI) {

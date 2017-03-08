@@ -13,10 +13,10 @@ import javax.sql.DataSource;
  * @author sj
  */
 public interface DataSourceProviderI {
-    
+
     public DataSource getDataSource(DataSource_DBI gpms_DS);
-    
-    public void removeDataSource(DataSource_DBI gpms_DS);
-    
+
     public GPMSManagedDataSourceI registerDataSource(DataSource_DBI gpms_DS, DataSource sqlDS);
+
+    public void dispose();
 }

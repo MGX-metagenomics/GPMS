@@ -33,4 +33,5 @@ public interface GPMSDataLoaderI {
 
     <T extends MasterI> void setCurrentMaster(T master);
     
+    void dispose();
 }

@@ -14,6 +14,8 @@ import javax.sql.DataSource;
  */
 public interface GPMSManagedDataSourceI extends DataSource, AutoCloseable {
 
+    public String getName();
+
     @Override
     public void close();
 
@@ -22,7 +24,7 @@ public interface GPMSManagedDataSourceI extends DataSource, AutoCloseable {
 
     @Override
     public GPMSManagedConnectionI getConnection() throws SQLException;
-    
+
     public void subscribe();
-    
+
 }

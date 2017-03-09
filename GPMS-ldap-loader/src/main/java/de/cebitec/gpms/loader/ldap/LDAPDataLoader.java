@@ -200,7 +200,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
             ldapPool.close();
             ldapPool = null;
         }
-
+        super.dispose();
     }
 
     @Override

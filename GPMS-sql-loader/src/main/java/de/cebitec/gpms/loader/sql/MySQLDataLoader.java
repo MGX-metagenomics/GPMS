@@ -120,6 +120,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                 Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
             }
         }
+        super.dispose();
     }
 
     private final static String SQL_GET_MEMBERSHIPS_BY_LOGIN

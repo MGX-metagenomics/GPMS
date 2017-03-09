@@ -44,13 +44,18 @@
         </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <version>2.4.6</version>
+            <artifactId>HikariCP-java7</artifactId>
+            <version>2.4.11</version>
         </dependency>
         <dependency>
             <groupId>de.cebitec.mgx</groupId>
             <artifactId>Trove-OSGi</artifactId>
             <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>4.3.1</version>
         </dependency>
         <dependency>
             <groupId>javax</groupId>
@@ -84,6 +89,7 @@
                             javax.sql,
                             com.zaxxer.hikari,
                             com.google.common.cache,
+                            com.google.common.collect,
                             gnu.trove.map,
                             gnu.trove.map.hash,
                             de.cebitec.gpms.core,
@@ -100,9 +106,9 @@
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
-                    <compilerArguments>
+                    <!-- <compilerArguments>
                         <endorseddirs>${endorsed.dir}</endorseddirs>
-                    </compilerArguments>
+                    </compilerArguments> -->
                 </configuration>
             </plugin>
             <plugin>

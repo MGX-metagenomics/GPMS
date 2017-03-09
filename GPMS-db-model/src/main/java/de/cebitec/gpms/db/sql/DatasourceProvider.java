@@ -15,7 +15,6 @@ import de.cebitec.gpms.util.GPMSManagedDataSourceI;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 import de.cebitec.gpms.util.DataSourceProviderI;
-import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -24,51 +23,12 @@ import java.util.TimerTask;
  * @author sj
  */
 public class DatasourceProvider implements DataSourceProviderI {
-    
-    private static class CacheKey {
-        private final DataSource_DBI datasource;
-        private final RoleI role;
-
-        public CacheKey(DataSource_DBI datasource, RoleI role) {
-            this.datasource = datasource;
-            this.role = role;
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 5;
-            hash = 71 * hash + Objects.hashCode(this.datasource);
-            hash = 71 * hash + Objects.hashCode(this.role);
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final CacheKey other = (CacheKey) obj;
-            if (!Objects.equals(this.datasource, other.datasource)) {
-                return false;
-            }
-            if (!Objects.equals(this.role, other.role)) {
-                return false;
-            }
-            return true;
-        }
-    }
 
     private final Cache<CacheKey, GPMSManagedDataSourceI> datasourceCache;
     private final Timer timer;
 
     public DatasourceProvider() {
-        datasourceCache = CacheBuilder.newBuilder()
+        datasourceCache = CacheBuilder.<CacheKey, GPMSManagedDataSourceI>newBuilder()
                 .expireAfterAccess(6, TimeUnit.MINUTES)
                 .removalListener(new RemovalListener<CacheKey, GPMSManagedDataSourceI>() {
 
@@ -83,14 +43,18 @@ public class DatasourceProvider implements DataSourceProviderI {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                datasourceCache.cleanUp();
+                cleanUp();
             }
         }, 10_000, 60_000 * 2);
     }
 
+    void cleanUp() {
+        datasourceCache.cleanUp();
+    }
+
     @Override
     public DataSource getDataSource(RoleI role, DataSource_DBI gpms_DS) {
-        return datasourceCache.getIfPresent(gpms_DS);
+        return datasourceCache.getIfPresent(new CacheKey(gpms_DS, role));
     }
 
     private void closeDataSource(GPMSManagedDataSourceI gpmsManagedDataSource) {
@@ -99,7 +63,7 @@ public class DatasourceProvider implements DataSourceProviderI {
 
     @Override
     public GPMSManagedDataSourceI registerDataSource(RoleI role, DataSource_DBI gpms_DS, DataSource sqlDatasource) {
-        GPMSManagedDataSourceI gpmsManagedDataSource = datasourceCache.getIfPresent(gpms_DS);
+        GPMSManagedDataSourceI gpmsManagedDataSource = datasourceCache.getIfPresent(new CacheKey(gpms_DS, role));
         if (gpmsManagedDataSource == null) {
             gpmsManagedDataSource = new GPMSManagedDataSource(sqlDatasource, gpms_DS, role);
             //
@@ -113,7 +77,8 @@ public class DatasourceProvider implements DataSourceProviderI {
 
     @Override
     public final void dispose() {
-        timer.cancel();
         datasourceCache.invalidateAll();
+        datasourceCache.cleanUp();
+        timer.cancel();
     }
 }

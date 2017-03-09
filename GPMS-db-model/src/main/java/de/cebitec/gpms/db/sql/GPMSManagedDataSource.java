@@ -113,7 +113,7 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
             }
         } else {
             if (DEBUG) {
-                System.err.println("Not closing datasource" + getName() + ", " + connInUse.get() + " connections still used, " + numSubscribers.get() + " subscriptions.");
+                System.err.println("Not closing datasource " + getName() + ", " + connInUse.get() + " connections still used, " + numSubscribers.get() + " subscriptions.");
                 subscribers.forEachEntry(new TObjectIntProcedure<String>() {
                     @Override
                     public boolean execute(String a, int b) {
@@ -294,8 +294,7 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
                 conn.close();
             } else {
                 if (DEBUG) {
-                    System.err.println("Duplicate Connection#close()");
-                    assert false;
+                    throw new SQLException("Duplicate Connection#close()");
                 }
             }
         }

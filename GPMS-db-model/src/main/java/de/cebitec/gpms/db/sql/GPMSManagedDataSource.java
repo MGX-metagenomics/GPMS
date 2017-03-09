@@ -6,6 +6,7 @@
 package de.cebitec.gpms.db.sql;
 
 import de.cebitec.gpms.core.DataSource_DBI;
+import de.cebitec.gpms.core.RoleI;
 import de.cebitec.gpms.util.GPMSManagedDataSourceI;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -43,6 +44,7 @@ import javax.sql.DataSource;
  */
 public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
 
+    private final RoleI role;
     private final DataSource_DBI gpmsDS;
     private final DataSource dataSource;
     private final AtomicInteger numSubscribers = new AtomicInteger(0);
@@ -52,15 +54,17 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
     private final TObjectIntMap<String> subscribers = new TObjectIntHashMap<>(10, 0.5f, 0);
     //
     private static final Logger LOG = Logger.getLogger(GPMSManagedDataSource.class.getName());
+    private final static boolean DEBUG = true;
 
-    public GPMSManagedDataSource(DataSource dataSource, DataSource_DBI gpmsDS) {
+    public GPMSManagedDataSource(DataSource dataSource, DataSource_DBI gpmsDS, RoleI role) {
         this.dataSource = dataSource;
         this.gpmsDS = gpmsDS;
+        this.role = role;
     }
 
     @Override
     public final String getName() {
-        return gpmsDS.getName();
+        return gpmsDS.getName() + "-" + role.getName();
     }
 
     @Override
@@ -84,7 +88,9 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
         String caller = Thread.currentThread().getStackTrace()[2].getClassName();
         synchronized (subscribers) {
             if (!subscribers.containsKey(caller)) {
-                System.err.println("DataSource#close invoked by unregistered caller " + caller);
+                if (DEBUG) {
+                    System.err.println("DataSource#close invoked by unregistered caller " + caller);
+                }
             } else {
                 subscribers.adjustValue(caller, -1);
                 if (subscribers.get(caller) == 0) {
@@ -106,16 +112,17 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
                 }
             }
         } else {
-            System.err.println("Not closing datasource, " + connInUse.get() + " connections still used, " + numSubscribers.get() + " subscriptions.");
-            subscribers.forEachEntry(new TObjectIntProcedure<String>() {
-                @Override
-                public boolean execute(String a, int b) {
-                    System.err.println("    " + a + ": " + b);
-                    return true;
-                }
+            if (DEBUG) {
+                System.err.println("Not closing datasource" + getName() + ", " + connInUse.get() + " connections still used, " + numSubscribers.get() + " subscriptions.");
+                subscribers.forEachEntry(new TObjectIntProcedure<String>() {
+                    @Override
+                    public boolean execute(String a, int b) {
+                        System.err.println("    " + a + ": " + b);
+                        return true;
+                    }
 
-            });
-//            assert false;
+                });
+            }
         }
     }
 
@@ -125,16 +132,18 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
         String caller = Thread.currentThread().getStackTrace()[2].getClassName();
         synchronized (subscribers) {
             if (!subscribers.containsKey(caller)) {
-                System.err.println("DataSource#getConnection invoked by unregistered caller " + caller);
-                System.err.println("registered callers are:");
-                subscribers.forEachEntry(new TObjectIntProcedure<String>() {
-                    @Override
-                    public boolean execute(String a, int b) {
-                        System.err.println("    " + a + ": " + b);
-                        return true;
-                    }
+                if (DEBUG) {
+                    System.err.println("DataSource#getConnection invoked by unregistered caller " + caller);
+                    System.err.println("registered callers are:");
+                    subscribers.forEachEntry(new TObjectIntProcedure<String>() {
+                        @Override
+                        public boolean execute(String a, int b) {
+                            System.err.println("    " + a + ": " + b);
+                            return true;
+                        }
 
-                });
+                    });
+                }
                 throw new SQLException("DataSource#getConnection invoked by unregistered caller " + caller);
             }
         }
@@ -154,7 +163,9 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
         String caller = Thread.currentThread().getStackTrace()[2].getClassName();
         synchronized (subscribers) {
             if (!subscribers.containsKey(caller)) {
-                System.err.println("DataSource#getConnection(user, pass) invoked by unregistered caller " + caller);
+                if (DEBUG) {
+                    System.err.println("DataSource#getConnection(user, pass) invoked by unregistered caller " + caller);
+                }
                 throw new SQLException("DataSource#getConnection invoked by unregistered caller " + caller);
             }
         }
@@ -206,6 +217,7 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
     public final int hashCode() {
         int hash = 7;
         hash = 17 * hash + Objects.hashCode(this.gpmsDS);
+        hash = 17 * hash + Objects.hashCode(this.role);
         return hash;
     }
 
@@ -221,7 +233,8 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
             return false;
         }
         final GPMSManagedDataSource other = (GPMSManagedDataSource) obj;
-        return Objects.equals(this.gpmsDS, other.gpmsDS);
+        return Objects.equals(this.gpmsDS, other.gpmsDS)
+                && Objects.equals(this.role, other.role);
     }
 
     private final class GPMSManagedConnection implements GPMSManagedConnectionI {
@@ -276,11 +289,14 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
         public final void close() throws SQLException {
             if (!conn.isClosed()) {
                 connInUse.decrementAndGet();
-//                System.err.println("Connection#close: " + connInUse.get() + " connections used, " + numSubscribers.get() + " subscriptions.");
+                if (DEBUG) 
+                    System.err.println("Connection#close: " + connInUse.get() + " connections used, " + numSubscribers.get() + " subscriptions.");
                 conn.close();
             } else {
-                System.err.println("Duplicate Connection#close()");
-                assert false;
+                if (DEBUG) {
+                    System.err.println("Duplicate Connection#close()");
+                    assert false;
+                }
             }
         }
 
@@ -508,6 +524,5 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
         public final boolean isWrapperFor(Class<?> iface) throws SQLException {
             return conn.isWrapperFor(iface);
         }
-
     }
 }

@@ -6,6 +6,7 @@
 package de.cebitec.gpms.util;
 
 import de.cebitec.gpms.core.DataSource_DBI;
+import de.cebitec.gpms.core.RoleI;
 import javax.sql.DataSource;
 
 /**
@@ -14,9 +15,9 @@ import javax.sql.DataSource;
  */
 public interface DataSourceProviderI {
 
-    public DataSource getDataSource(DataSource_DBI gpms_DS);
+    public DataSource getDataSource(RoleI role, DataSource_DBI gpms_DS);
 
-    public GPMSManagedDataSourceI registerDataSource(DataSource_DBI gpms_DS, DataSource sqlDS);
+    public GPMSManagedDataSourceI registerDataSource(RoleI role, DataSource_DBI gpms_DS, DataSource sqlDS);
 
     public void dispose();
 }

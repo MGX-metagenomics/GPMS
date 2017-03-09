@@ -31,7 +31,7 @@ public interface GPMSDataLoaderI {
 
     Collection<ProjectClassI> getSupportedProjectClasses();
 
-    <T extends MasterI> void setCurrentMaster(T master);
+    void setCurrentMaster(MasterI master);
     
     void dispose();
 }

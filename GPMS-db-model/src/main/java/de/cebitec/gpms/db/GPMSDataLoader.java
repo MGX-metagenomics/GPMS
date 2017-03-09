@@ -6,7 +6,6 @@
 package de.cebitec.gpms.db;
 
 import de.cebitec.gpms.db.sql.DataSourceFactory;
-import de.cebitec.gpms.db.sql.DatasourceProvider;
 import de.cebitec.gpms.util.GPMSDataLoaderI;
 import de.cebitec.gpms.core.DataSourceI;
 import de.cebitec.gpms.core.DataSource_DBI;
@@ -16,6 +15,7 @@ import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.data.JDBCMasterI;
 import de.cebitec.gpms.data.JPAMasterI;
 import de.cebitec.gpms.data.ProxyDataSourceI;
+import de.cebitec.gpms.db.sql.DatasourceProvider;
 import de.cebitec.gpms.util.EMFNameResolver;
 import de.cebitec.gpms.util.GPMSDataSourceSelector;
 import de.cebitec.gpms.util.GPMSManagedDataSourceI;
@@ -60,7 +60,6 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
         *  all other master instances require a db connection
         * 
          */
-
         //
         // find an appropriate GPMS datasource to work with
         //
@@ -91,7 +90,7 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
         }
         // add to cache
         GPMSManagedDataSourceI gpmsManagedDataSource = dsProvider.registerDataSource(mbr.getRole(), dsDB, sqlDatasource);
-        
+
         //
         // create plain JDBC or JPA master depending on requested master class
         //
@@ -112,10 +111,10 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
             return (T) jdbcMaster;
         }
     }
-    
+
     @Override
-    public  void dispose() {
+    public void dispose() {
         dsProvider.dispose();
     }
-    
+
 }

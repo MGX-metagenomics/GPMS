@@ -34,6 +34,7 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
     private final DataSourceProviderI dsProvider = new DatasourceProvider();
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends MasterI> T getCurrentMaster() {
         return (T) currentMaster.get();
     }
@@ -44,6 +45,7 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends MasterI> T createMaster(MembershipI mbr, Class<T> masterClass) throws GPMSException {
 
         if (!JDBCMasterI.class.isAssignableFrom(masterClass)) {

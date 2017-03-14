@@ -79,8 +79,8 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
         //
         // find the backing SQL datasource (or create a new one)
         //
-        DataSource sqlDatasource = dsProvider.getDataSource(mbr.getRole(), dsDB);
-        if (sqlDatasource == null) {
+        GPMSManagedDataSourceI gpmsManagedDataSource = dsProvider.getDataSource(mbr.getRole(), dsDB);
+        if (gpmsManagedDataSource == null) {
             final String[] dbAuth = getDatabaseCredentials(mbr.getRole());
 
             if (dbAuth == null || dbAuth.length != 2) {
@@ -88,10 +88,13 @@ public abstract class GPMSDataLoader implements GPMSDataLoaderI {
             }
 
             // create new SQL datasource
-            sqlDatasource = DataSourceFactory.createDataSource(mbr, dsDB, dbAuth[0], dbAuth[1]);
+            DataSource sqlDatasource = DataSourceFactory.createDataSource(mbr, dsDB, dbAuth[0], dbAuth[1]);
+            
+            // add to cache
+            gpmsManagedDataSource = dsProvider.registerDataSource(mbr.getRole(), dsDB, sqlDatasource);
         }
         // add to cache
-        GPMSManagedDataSourceI gpmsManagedDataSource = dsProvider.registerDataSource(mbr.getRole(), dsDB, sqlDatasource);
+        //GPMSManagedDataSourceI gpmsManagedDataSource = dsProvider.registerDataSource(mbr.getRole(), dsDB, sqlDatasource);
 
         //
         // create plain JDBC or JPA master depending on requested master class

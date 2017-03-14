@@ -53,12 +53,12 @@ public class DatasourceProvider implements DataSourceProviderI {
     }
 
     @Override
-    public DataSource getDataSource(RoleI role, DataSource_DBI gpms_DS) {
+    public GPMSManagedDataSourceI getDataSource(RoleI role, DataSource_DBI gpms_DS) {
         return datasourceCache.getIfPresent(new CacheKey(gpms_DS, role));
     }
 
     private void closeDataSource(GPMSManagedDataSourceI gpmsManagedDataSource) {
-        gpmsManagedDataSource.close();
+        gpmsManagedDataSource.close(datasourceCache);
     }
 
     @Override
@@ -69,7 +69,7 @@ public class DatasourceProvider implements DataSourceProviderI {
             //
             // a "fake" subscription which is withdrawn by the removal listener
             //
-            gpmsManagedDataSource.subscribe();
+            gpmsManagedDataSource.subscribe(datasourceCache);
             datasourceCache.put(new CacheKey(gpms_DS, role), gpmsManagedDataSource);
         }
         return gpmsManagedDataSource;

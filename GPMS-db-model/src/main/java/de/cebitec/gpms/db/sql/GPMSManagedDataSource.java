@@ -51,7 +51,7 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
     // number of unclosed connections
     private final AtomicInteger connInUse = new AtomicInteger(0);
     //
-    private final TObjectIntMap<String> subscribers = new TObjectIntHashMap<>(10, 0.5f, 0);
+    private final TObjectIntMap<Object> subscribers = new TObjectIntHashMap<>(10, 0.5f, 0);
     //
     private static final Logger LOG = Logger.getLogger(GPMSManagedDataSource.class.getName());
     private final static boolean DEBUG = true;
@@ -60,6 +60,9 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
         this.dataSource = dataSource;
         this.gpmsDS = gpmsDS;
         this.role = role;
+
+        // backend datasource should be the real thing
+        assert !(this.dataSource instanceof GPMSManagedDataSourceI);
     }
 
     @Override
@@ -68,10 +71,10 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
     }
 
     @Override
-    public final void subscribe() {
+    public final synchronized void subscribe(Object caller) {
         numSubscribers.incrementAndGet();
 
-        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
+//        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
         synchronized (subscribers) {
             if (!subscribers.increment(caller)) {
                 subscribers.put(caller, 1);
@@ -83,9 +86,9 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
     }
 
     @Override
-    public final synchronized void close() {
+    public final synchronized void close(Object caller) {
 
-        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
+//        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
         synchronized (subscribers) {
             if (!subscribers.containsKey(caller)) {
                 if (DEBUG) {
@@ -114,9 +117,9 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
         } else {
             if (DEBUG) {
                 System.err.println("Not closing datasource " + getName() + ", " + connInUse.get() + " connections still used, " + numSubscribers.get() + " subscriptions.");
-                subscribers.forEachEntry(new TObjectIntProcedure<String>() {
+                subscribers.forEachEntry(new TObjectIntProcedure<Object>() {
                     @Override
-                    public boolean execute(String a, int b) {
+                    public boolean execute(Object a, int b) {
                         System.err.println("    " + a + ": " + b);
                         return true;
                     }
@@ -127,17 +130,17 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
     }
 
     @Override
-    public final GPMSManagedConnectionI getConnection() throws SQLException {
+    public final GPMSManagedConnectionI getConnection(Object caller) throws SQLException {
 
-        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
+//        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
         synchronized (subscribers) {
             if (!subscribers.containsKey(caller)) {
                 if (DEBUG) {
                     System.err.println("DataSource#getConnection invoked by unregistered caller " + caller);
                     System.err.println("registered callers are:");
-                    subscribers.forEachEntry(new TObjectIntProcedure<String>() {
+                    subscribers.forEachEntry(new TObjectIntProcedure<Object>() {
                         @Override
-                        public boolean execute(String a, int b) {
+                        public boolean execute(Object a, int b) {
                             System.err.println("    " + a + ": " + b);
                             return true;
                         }
@@ -158,25 +161,32 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
     }
 
     @Override
-    public final GPMSManagedConnectionI getConnection(String username, String password) throws SQLException {
-
-        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
-        synchronized (subscribers) {
-            if (!subscribers.containsKey(caller)) {
-                if (DEBUG) {
-                    System.err.println("DataSource#getConnection(user, pass) invoked by unregistered caller " + caller);
-                }
-                throw new SQLException("DataSource#getConnection invoked by unregistered caller " + caller);
-            }
-        }
-
-        Connection c = dataSource.getConnection(username, password);
-        if (c != null) {
-            connInUse.incrementAndGet();
-            return new GPMSManagedConnection(c);
-        }
-        return null;
+    public Connection getConnection() throws SQLException {
+        throw new SQLException("DataSource#getConnection() should not be used.");
     }
+
+    @Override
+    public final GPMSManagedConnectionI getConnection(String username, String password) throws SQLException {
+        throw new SQLException("DataSource#getConnection(user, pass) should not be used.");
+    }
+//
+//        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
+//        synchronized (subscribers) {
+//            if (!subscribers.containsKey(caller)) {
+//                if (DEBUG) {
+//                    System.err.println("DataSource#getConnection(user, pass) invoked by unregistered caller " + caller);
+//                }
+//                throw new SQLException("DataSource#getConnection invoked by unregistered caller " + caller);
+//            }
+//        }
+//
+//        Connection c = dataSource.getConnection(username, password);
+//        if (c != null) {
+//            connInUse.incrementAndGet();
+//            return new GPMSManagedConnection(c);
+//        }
+//        return null;
+//    }
 
     @Override
     public final PrintWriter getLogWriter() throws SQLException {
@@ -289,8 +299,21 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
         public final void close() throws SQLException {
             if (!conn.isClosed()) {
                 connInUse.decrementAndGet();
-                if (DEBUG) 
+                if (DEBUG) {
                     System.err.println("Connection#close: " + connInUse.get() + " connections used, " + numSubscribers.get() + " subscriptions.");
+                    if (connInUse.get() > 15) {
+                        System.err.println("registered callers are:");
+                        subscribers.forEachEntry(new TObjectIntProcedure<Object>() {
+                            @Override
+                            public boolean execute(Object a, int b) {
+                                System.err.println("    " + a + ": " + b);
+                                return true;
+                            }
+
+                        });
+                    }
+                }
+
                 conn.close();
             } else {
                 if (DEBUG) {

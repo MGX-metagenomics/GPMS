@@ -22,14 +22,14 @@ public class GPMSJDBCMaster extends GPMSSimpleMaster implements JDBCMasterI {
         super(m);
         this.gpmsDataSource = gpmsDataSource;
         this.dataSource = ds;
-        this.dataSource.subscribe();
+        this.dataSource.subscribe(this);
     }
 
     @Override
     public void close() {
         super.close();
         LOG.log(Level.INFO, "Closing GPMSJDBCMaster for {0}/{1}", new Object[]{getProject().getName(), getRole().getName()});
-        dataSource.close();
+        dataSource.close(this);
     }
 
     @Override

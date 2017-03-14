@@ -15,7 +15,7 @@ import javax.sql.DataSource;
  */
 public interface DataSourceProviderI {
 
-    public DataSource getDataSource(RoleI role, DataSource_DBI gpms_DS);
+    public GPMSManagedDataSourceI getDataSource(RoleI role, DataSource_DBI gpms_DS);
 
     public GPMSManagedDataSourceI registerDataSource(RoleI role, DataSource_DBI gpms_DS, DataSource sqlDS);
 

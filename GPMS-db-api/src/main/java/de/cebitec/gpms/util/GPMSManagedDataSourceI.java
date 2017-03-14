@@ -12,19 +12,16 @@ import javax.sql.DataSource;
  *
  * @author sj
  */
-public interface GPMSManagedDataSourceI extends DataSource, AutoCloseable {
+public interface GPMSManagedDataSourceI extends DataSource {
 
     public String getName();
 
-    @Override
-    public void close();
+    public void close(Object caller);
 
-    @Override
-    public GPMSManagedConnectionI getConnection(String username, String password) throws SQLException;
+//    public GPMSManagedConnectionI getConnection(Object caller, String username, String password) throws SQLException;
 
-    @Override
-    public GPMSManagedConnectionI getConnection() throws SQLException;
+    public GPMSManagedConnectionI getConnection(Object caller) throws SQLException;
 
-    public void subscribe();
+    public void subscribe(Object caller);
 
 }

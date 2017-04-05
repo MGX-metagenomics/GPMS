@@ -28,7 +28,10 @@
                 <configuration>
                     <instructions>
                         <Export-Package>de.cebitec.gpms.dto</Export-Package>
-                        <Import-Package>com.google.protobuf,de.cebitec.gpms.core</Import-Package>
+                        <Import-Package>
+                            com.google.protobuf,
+                            de.cebitec.gpms.core
+                        </Import-Package>
                         <Private-Package></Private-Package>
                     </instructions>
                 </configuration>

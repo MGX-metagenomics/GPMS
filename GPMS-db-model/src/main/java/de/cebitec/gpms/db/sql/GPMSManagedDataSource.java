@@ -54,7 +54,7 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
     private final TObjectIntMap<Object> subscribers = new TObjectIntHashMap<>(10, 0.5f, 0);
     //
     private static final Logger LOG = Logger.getLogger(GPMSManagedDataSource.class.getName());
-    private final static boolean DEBUG = true;
+    private final static boolean DEBUG = false;
 
     public GPMSManagedDataSource(DataSource dataSource, DataSource_DBI gpmsDS, RoleI role) {
         this.dataSource = dataSource;
@@ -169,24 +169,6 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
     public final GPMSManagedConnectionI getConnection(String username, String password) throws SQLException {
         throw new SQLException("DataSource#getConnection(user, pass) should not be used.");
     }
-//
-//        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
-//        synchronized (subscribers) {
-//            if (!subscribers.containsKey(caller)) {
-//                if (DEBUG) {
-//                    System.err.println("DataSource#getConnection(user, pass) invoked by unregistered caller " + caller);
-//                }
-//                throw new SQLException("DataSource#getConnection invoked by unregistered caller " + caller);
-//            }
-//        }
-//
-//        Connection c = dataSource.getConnection(username, password);
-//        if (c != null) {
-//            connInUse.incrementAndGet();
-//            return new GPMSManagedConnection(c);
-//        }
-//        return null;
-//    }
 
     @Override
     public final PrintWriter getLogWriter() throws SQLException {

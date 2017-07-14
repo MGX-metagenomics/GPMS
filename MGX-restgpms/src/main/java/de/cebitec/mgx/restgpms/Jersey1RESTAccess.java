@@ -54,7 +54,7 @@ public class Jersey1RESTAccess implements RESTAccessI {
         cc = new DefaultClientConfig();
         cc.getProperties().put(ClientConfig.PROPERTY_THREADPOOL_SIZE, 10);
         cc.getProperties().put(ClientConfig.PROPERTY_CONNECT_TIMEOUT, 10000); // in ms
-        cc.getProperties().put(ClientConfig.PROPERTY_READ_TIMEOUT, 60000); // in ms
+        cc.getProperties().put(ClientConfig.PROPERTY_READ_TIMEOUT, 90000); // in ms
 
         if (!verifySSL) {
 

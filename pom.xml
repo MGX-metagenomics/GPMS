@@ -10,7 +10,7 @@
     <name>GPMS</name>
     
     <prerequisites>
-        <maven>3.0</maven>
+        <maven>3.0.5</maven>
     </prerequisites> 
     
     <build>
@@ -18,7 +18,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.7.0</version>
                 <configuration>
                     <compilerArgument>-Xlint:all</compilerArgument>
                     <source>1.7</source>

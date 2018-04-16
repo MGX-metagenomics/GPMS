@@ -20,7 +20,7 @@ public class TestMaster {
 
         String serverURI = "https://mgx.cebitec.uni-bielefeld.de/MGX-maven-web/webresources/";
 
-        String config = System.getProperty("user.home") + "/.m2/mgx.junit";
+        String config = System.getProperty("user.home") + "/.m2/gpms.junit";
         File f = new File(config);
         if (f.exists() && f.canRead()) {
             Properties p = new Properties();

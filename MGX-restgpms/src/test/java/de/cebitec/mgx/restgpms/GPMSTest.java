@@ -19,12 +19,9 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Assume;
-import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
@@ -32,7 +29,6 @@ import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.systemProperty;
 import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.junit.PaxExam;
 
 /**
  *
@@ -144,10 +140,11 @@ public class GPMSTest {
             MembershipI m = memberships.next();
             assertNotNull(m.getProject());
             System.err.println("  " + m.getProject().getName());
+            assertEquals("MGX_Unittest", m.getProject().getName());
             assertNotNull(m.getRole());
             cnt++;
         }
-        assertEquals(2, cnt);
+        assertEquals(1, cnt);
     }
 
     @Test

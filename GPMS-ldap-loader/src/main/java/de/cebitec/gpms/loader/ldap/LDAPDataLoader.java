@@ -494,20 +494,19 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         throw new GPMSException("No such project class: " + projClassDN);
     }
 
-    Collection<RoleI> loadRoles(ProjectClassI pClass) throws GPMSException {
+    private void loadRoles(ProjectClassI pClass) throws GPMSException {
         String cfgFileName = new StringBuilder(config.getGPMSConfigDirectory()).append(File.separator).append(pClass.getName().toLowerCase()).append(".conf").toString();
         File cfgFile = new File(cfgFileName);
         if (!cfgFile.exists()) {
             log(cfgFile.getAbsolutePath() + " missing or unreadable, obtaining roles for " + pClass.getName() + " from LDAP directory.");
-            return loadRolesFromDirectory(pClass);
+            loadRolesFromDirectory(pClass);
+            return;
         }
 
         //
         // read roles from gpms config file
         //
         log("Reading " + pClass.getName() + " role file " + cfgFile.getAbsolutePath());
-
-        List<RoleI> ret = new ArrayList<>(3);
 
         String line;
         boolean in_section = false;
@@ -535,14 +534,12 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 
                         String dbUser = strings[1];
                         String dbPass = strings[2];
-                        ret.add(r);
                         dbAccess.put(r, new String[]{dbUser, dbPass});
                     }
                 }
             }
         } catch (IOException ex) {
             log(ex.getMessage());
-            ret.clear();
             throw new GPMSException(ex);
         }
 
@@ -572,11 +569,9 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 //                conn.close();
 //            }
 //        }
-        return ret;
     }
 
-    private Collection<RoleI> loadRolesFromDirectory(ProjectClassI pClass) throws GPMSException {
-        List<RoleI> ret = new ArrayList<>(3);
+    private void loadRolesFromDirectory(ProjectClassI pClass) throws GPMSException {
 
         LDAPConnection conn = null;
 
@@ -588,7 +583,6 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                 String roleName = sre.getAttributeValue(ATTR_NAME);
                 log(pClass.getName() + ": found LDAP role: " + roleName);
                 RoleI r = new Role(pClass, roleName);
-                ret.add(r);
                 pClass.getRoles().add(r);
             }
         } catch (LDAPException ex) {
@@ -600,7 +594,6 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
             }
 
         }
-        return ret;
     }
 
     private LDAPConnection getConnection() throws LDAPException {

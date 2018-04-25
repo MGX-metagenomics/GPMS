@@ -159,6 +159,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                             log("Found unsupported project class " + projectClassname + ", loading..");
                             projectClass = new ProjectClass(projectClassname);
                             loadRoles(projectClass); // load role definitions
+                            supportedProjectClasses.put(projectClassname, projectClass);
                         }
                         Collection<DataSourceI> projectDataSources = loadDataSources(projectName);
                         ProjectI project = new Project(projectName, projectClass, projectDataSources, false);
@@ -270,18 +271,17 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         return datasources;
     }
 
-    private Collection<RoleI> loadRoles(ProjectClassI pClass) throws GPMSException {
+    private void loadRoles(ProjectClassI pClass) throws GPMSException {
 
         String cfgFileName = new StringBuilder(config.getGPMSConfigDirectory()).append(File.separator).append(pClass.getName().toLowerCase()).append(".conf").toString();
         File cfgFile = new File(cfgFileName);
         if (!cfgFile.exists()) {
             log(cfgFile.getAbsolutePath() + " missing or unreadable, obtaining roles for " + pClass.getName() + " from SQL database.");
-            return loadRolesFromDB(pClass);
+            loadRolesFromDB(pClass);
+            return;
         }
 
         log("Reading " + pClass.getName() + " role file " + cfgFile.getAbsolutePath());
-
-        List<RoleI> ret = new ArrayList<>(3);
 
         String line;
         boolean in_section = false;
@@ -309,26 +309,22 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 
                         String dbUser = strings[1];
                         String dbPass = strings[2];
-                        ret.add(r);
                         dbAccess.put(r, new String[]{dbUser, dbPass});
                     }
                 }
             }
         } catch (IOException ex) {
             log(ex.getMessage());
-            ret.clear();
             throw new GPMSException(ex);
         }
 
-        return ret;
     }
 
     private final static String SQL_ROLES_BY_PROJCLASSNAME = "SELECT r.name FROM Role r "
             + "LEFT JOIN Project_Class pc ON (r.project_class_id=pc._id) "
             + "WHERE pc.name=?";
 
-    private Collection<RoleI> loadRolesFromDB(ProjectClassI pClass) throws GPMSException {
-        List<RoleI> ret = new ArrayList<>(3);
+    private void loadRolesFromDB(ProjectClassI pClass) throws GPMSException {
 
         try (Connection conn = getConnection()) {
             try (PreparedStatement stmt = conn.prepareStatement(SQL_ROLES_BY_PROJCLASSNAME)) {
@@ -338,7 +334,6 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                         String roleName = rs.getString(1);
                         log(pClass.getName() + ": found DB role: " + roleName);
                         RoleI r = new Role(pClass, roleName);
-                        ret.add(r);
                         pClass.getRoles().add(r);
                     }
                 }
@@ -347,7 +342,6 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
             Logger.getLogger(getClass().getName()).log(Level.INFO, ex.getMessage());
             throw new GPMSException(ex);
         }
-        return ret;
     }
 
     private Connection getConnection() throws SQLException {

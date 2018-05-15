@@ -9,6 +9,7 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+import com.sun.jersey.client.urlconnection.HTTPSProperties;
 import de.cebitec.gpms.core.DataSourceI;
 import de.cebitec.gpms.core.DataSourceTypeI;
 import de.cebitec.gpms.core.DataSource_ApplicationServerI;
@@ -39,13 +40,25 @@ import java.beans.PropertyChangeSupport;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 /**
  *
@@ -109,8 +122,57 @@ public class GPMSClient implements GPMSClientI {
         cc.getClasses().add(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
         cc.getProperties().put(ClientConfig.PROPERTY_THREADPOOL_SIZE, 10);
         cc.getProperties().put(ClientConfig.PROPERTY_CONNECT_TIMEOUT, 10000); // in ms
-        //cc.getProperties().put(ClientConfig.PROPERTY_READ_TIMEOUT, 30000);
+        cc.getProperties().put(ClientConfig.PROPERTY_READ_TIMEOUT, 30000);
 
+        if (!requireSSL) {
+
+            /*
+             * taken from
+             * http://stackoverflow.com/questions/6047996/ignore-self-signed-ssl-cert-using-jersey-client
+             * 
+             * code below disables certificate validation; required for servers running
+             * with self-signed or otherwise untrusted certificates
+             */
+            // Create a trust manager that does not validate certificate chains
+            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+
+                @Override
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                }
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                }
+
+            }};
+
+            SSLContext ctx = null;
+            try {
+                ctx = SSLContext.getInstance("SSL");
+                ctx.init(null, trustAllCerts, new SecureRandom());
+                HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
+            } catch (NoSuchAlgorithmException | KeyManagementException ex) {
+                Logger.getLogger(RESTMaster.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            // Create all-trusting host name verifier
+            HostnameVerifier allHostsValid = new HostnameVerifier() {
+                @Override
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                }
+            };
+
+            // Install the all-trusting host verifier
+            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+
+            cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(null, ctx));
+        }
+        
         client = Client.create(cc);
     }
 
@@ -233,6 +295,8 @@ public class GPMSClient implements GPMSClientI {
             response = getResource().path("GPMS").path("GPMSBean").path("login").get(ClientResponse.class);
         } catch (ClientHandlerException che) {
             if (che.getCause() != null && che.getCause() instanceof SSLHandshakeException) {
+                SSLHandshakeException she = (SSLHandshakeException) che.getCause();
+                System.err.println(she);
                 return login(login, password);
             } else if (che.getCause() != null && che.getCause() instanceof UnknownHostException) {
                 throw new GPMSException("Could not resolve server address. Check your internet connection.");

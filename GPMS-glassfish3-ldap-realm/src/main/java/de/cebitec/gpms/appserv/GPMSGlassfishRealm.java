@@ -127,6 +127,7 @@ public class GPMSGlassfishRealm extends AppservRealm {
                 String[] components = curServer.split(":");
                 try {
                     port = Integer.parseInt(components[components.length - 1]);
+                    curServer = components[0];
                 } catch (NumberFormatException nfe) {
                 }
             }

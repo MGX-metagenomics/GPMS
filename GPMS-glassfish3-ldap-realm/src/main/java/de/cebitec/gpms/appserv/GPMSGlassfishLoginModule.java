@@ -33,9 +33,9 @@ public final class GPMSGlassfishLoginModule extends AppservPasswordLoginModule {
     protected final void authenticateUser() throws LoginException {
         LOG.log(Level.FINE, "Authenticating user ''{0}''", _username);
 
-        if (!(_currentRealm instanceof GPMSGlassfishRealm)) {
-            throw new LoginException("Wrong realm. Expected GPMSGlassfishRealm, is '" + _currentRealm.getClass().getName() + "'");
-        }
+//        if (!(_currentRealm instanceof GPMSGlassfishRealm)) {
+//            throw new LoginException("Wrong realm. Expected GPMSGlassfishRealm, is '" + _currentRealm.getClass().getName() + "'");
+//        }
 
         GPMSGlassfishRealm gpmsrealm = (GPMSGlassfishRealm) _currentRealm;
         

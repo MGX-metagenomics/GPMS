@@ -133,6 +133,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 
     @Override
     public Collection<MembershipI> getMemberships(final String userLogin) throws GPMSException {
+        //
         // cache lookup first
         //
         List<MembershipI> cachedMemberships = membership_cache.getIfPresent(userLogin);
@@ -140,6 +141,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
             return cachedMemberships;
         }
 
+        //
         // no cache entry, have to do the lookup
         //
         List<MembershipI> memberships = new ArrayList<>();
@@ -154,9 +156,14 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                         String roleName = rs.getString(2);
                         String projectClassname = rs.getString(3);
 
+                        if (projectClassname == null || projectClassname.isEmpty()) {
+                            log("ERROR: null/empty project class name for project {0}", projectName);
+                            continue;
+                        }
+
                         ProjectClassI projectClass = supportedProjectClasses.get(projectClassname);
                         if (projectClass == null) {
-                            log("Found unsupported project class " + projectClassname + ", loading..");
+                            log("Found unsupported project class {0} for project {1}, loading..", projectClassname, projectName);
                             projectClass = new ProjectClass(projectClassname);
                             loadRoles(projectClass); // load role definitions
                             supportedProjectClasses.put(projectClassname, projectClass);
@@ -181,7 +188,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                 }
             }
         } catch (SQLException ex) {
-            Logger.getLogger(getClass().getName()).log(Level.INFO, ex.getMessage());
+            log(ex.getMessage());
             return Collections.EMPTY_LIST; // empty list instead of incomplete one
         }
 
@@ -219,7 +226,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
             ProjectClassI pClass = new ProjectClass(projectName);
             project = new Project(projectName, pClass, dataSources, false);
         } catch (SQLException ex) {
-            Logger.getLogger(MySQLDataLoader.class.getName()).log(Level.SEVERE, null, ex);
+            log(ex.getMessage());
             throw new GPMSException(ex);
         }
         return project;
@@ -276,12 +283,12 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         String cfgFileName = new StringBuilder(config.getGPMSConfigDirectory()).append(File.separator).append(pClass.getName().toLowerCase()).append(".conf").toString();
         File cfgFile = new File(cfgFileName);
         if (!cfgFile.exists()) {
-            log(cfgFile.getAbsolutePath() + " missing or unreadable, obtaining roles for " + pClass.getName() + " from SQL database.");
+            log("{0} missing or unreadable, obtaining roles for {1} from SQL database.", cfgFile.getAbsolutePath(), pClass.getName());
             loadRolesFromDB(pClass);
             return;
         }
 
-        log("Reading " + pClass.getName() + " role file " + cfgFile.getAbsolutePath());
+        log("Reading {0} role file {1}", pClass.getName(), cfgFile.getAbsolutePath());
 
         String line;
         boolean in_section = false;
@@ -300,7 +307,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                     if (line.contains(":") && !line.startsWith("#")) {
                         String[] strings = line.split(":");
                         if (strings.length != 3) {
-                            log("Unparseable line in " + cfgFileName + ": " + line);
+                            log("Unparseable line in {0}: {1}", cfgFileName, line);
                             throw new GPMSException("Invalid format for application configuration file.");
                         }
 
@@ -339,7 +346,7 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                 }
             }
         } catch (SQLException ex) {
-            Logger.getLogger(getClass().getName()).log(Level.INFO, ex.getMessage());
+            log(ex.getMessage());
             throw new GPMSException(ex);
         }
     }
@@ -349,10 +356,6 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
     }
 
     private final static Logger logger = Logger.getLogger(MySQLDataLoader.class.getPackage().getName());
-
-    private void log(String msg) {
-        logger.log(Level.INFO, msg);
-    }
 
     private void log(String msg, Object... args) {
         logger.log(Level.INFO, String.format(msg, args));

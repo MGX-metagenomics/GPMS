@@ -128,7 +128,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         if (ldapPool != null) {
             return;
         }
-
+        
         // setup ldap connection pool
         RoundRobinServerSet serverSet = new RoundRobinServerSet(
                 new String[]{
@@ -495,7 +495,12 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
     }
 
     private void loadRoles(ProjectClassI pClass) throws GPMSException {
-        String cfgFileName = new StringBuilder(config.getGPMSConfigDirectory()).append(File.separator).append(pClass.getName().toLowerCase()).append(".conf").toString();
+        if (pClass == null || pClass.getName() == null || pClass.getName().isEmpty()) {
+            throw new GPMSException("Unable to load roles for null/empty project class.");
+        }
+        
+        String cfgFileName = new StringBuilder(config != null ? config.getGPMSConfigDirectory() : "")
+                .append(File.separator).append(pClass.getName().toLowerCase()).append(".conf").toString();
         File cfgFile = new File(cfgFileName);
         if (!cfgFile.exists()) {
             log(cfgFile.getAbsolutePath() + " missing or unreadable, obtaining roles for " + pClass.getName() + " from LDAP directory.");

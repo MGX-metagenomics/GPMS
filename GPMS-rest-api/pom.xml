@@ -1,6 +1,6 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -32,9 +32,14 @@
             <artifactId>GPMS-core-api</artifactId>
             <version>1.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>4.3.1</version>
+        </dependency>
     </dependencies>
     
-     <build>
+    <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.felix</groupId>
@@ -44,8 +49,9 @@
                 <configuration>
                     <instructions>
                         <Export-Package>de.cebitec.gpms.rest</Export-Package>
-                        <Import-Package>de.cebitec.gpms.core</Import-Package>
+                        <Import-Package>org.osgi.framework,de.cebitec.gpms.core</Import-Package>
                         <Private-Package/>
+                        <Bundle-Activator>de.cebitec.gpms.rest.OSGiContext</Bundle-Activator>
                     </instructions>
                 </configuration>
             </plugin>

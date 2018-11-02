@@ -29,10 +29,12 @@ public interface GPMSClientI {
 
     boolean login(String user, String password) throws GPMSException;
 
+    boolean login(String user, char[] password) throws GPMSException;
+
     void logout();
 
     boolean loggedIn();
-    
+
     long ping();
 
     public void addPropertyChangeListener(PropertyChangeListener listener);

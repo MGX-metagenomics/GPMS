@@ -32,6 +32,7 @@
                 <configuration>
                     <instructions>
                         <Import-Package>
+                            org.osgi.framework,
                             javax.net.ssl,
                             com.sun.jersey.api.client,
                             com.sun.jersey.api.client.filter,
@@ -44,6 +45,7 @@
                             de.cebitec.mgx.protobuf.serializer
                         </Import-Package>
                         <Export-Package>de.cebitec.mgx.restgpms</Export-Package>
+                        <Bundle-Activator>de.cebitec.mgx.restgpms.Activator</Bundle-Activator>
                     </instructions>
                 </configuration>
             </plugin>

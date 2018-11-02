@@ -1,5 +1,8 @@
 package de.cebitec.mgx.restgpms;
 
+import de.cebitec.gpms.core.GPMSException;
+import de.cebitec.gpms.rest.GPMSClientFactory;
+import de.cebitec.gpms.rest.GPMSClientI;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -7,6 +10,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static org.junit.Assert.fail;
 import org.junit.Assume;
 
@@ -16,7 +21,7 @@ import org.junit.Assume;
  */
 public class TestMaster {
 
-    public static GPMSClient get() {
+    public static GPMSClientI get() {
 
         String serverURI = "https://mgx.cebitec.uni-bielefeld.de/MGX-maven-web/webresources/";
 
@@ -43,7 +48,12 @@ public class TestMaster {
             Assume.assumeFalse("Could not connect to "+serverURI, true);
         }
 
-        GPMSClient gpms = new GPMSClient("MyServer", serverURI, false);
+        GPMSClientI gpms = null;
+        try {
+            gpms = GPMSClientFactory.createClient("MyServer", serverURI, false);
+        } catch (GPMSException ex) {
+            Logger.getLogger(TestMaster.class.getName()).log(Level.SEVERE, null, ex);
+        }
         return gpms;
     }
 }

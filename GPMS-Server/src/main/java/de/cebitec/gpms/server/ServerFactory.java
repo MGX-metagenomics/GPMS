@@ -5,14 +5,16 @@
  */
 package de.cebitec.gpms.server;
 
+import de.cebitec.gpms.core.GPMSException;
+import de.cebitec.gpms.rest.GPMSClientFactory;
 import de.cebitec.gpms.rest.GPMSClientI;
-import de.cebitec.mgx.restgpms.GPMSClient;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import org.openide.util.Exceptions;
 import org.openide.util.NbPreferences;
 
 /**
@@ -31,17 +33,28 @@ public class ServerFactory {
             String siteName = NbPreferences.forModule(ServerFactory.class).get("server" + i, null);
             String siteUri = NbPreferences.forModule(ServerFactory.class).get("uri" + i, null);
             if (siteName != null && siteUri != null) {
-                GPMSClientI c = new GPMSClient(siteName, siteUri);
-                data.add(c);
+                GPMSClientI c = null;
+                try {
+                    c = GPMSClientFactory.createClient(siteName, siteUri);
+                } catch (GPMSException ex) {
+                    Exceptions.printStackTrace(ex);
+                }
+                if (c != null) {
+                    data.add(c);
+                }
             }
         }
 
         // add default site
         if (data.isEmpty()) {
-            data.add(new GPMSClient("CeBiTec", "https://mgx.cebitec.uni-bielefeld.de/MGX-maven-web/webresources/"));
-            data.add(new GPMSClient("JLU", "https://mgx.computational.bio.uni-giessen.de/MGX-maven-web/webresources/"));
+            try {
+                data.add(GPMSClientFactory.createClient("CeBiTec", "https://mgx.cebitec.uni-bielefeld.de/MGX-maven-web/webresources/"));
+                data.add(GPMSClientFactory.createClient("JLU", "https://mgx.computational.bio.uni-giessen.de/MGX-maven-web/webresources/"));
+            } catch (GPMSException ex) {
+                Exceptions.printStackTrace(ex);
+            }
         }
-        Collections.sort(data, new Comparator<GPMSClientI>(){
+        Collections.sort(data, new Comparator<GPMSClientI>() {
             @Override
             public int compare(GPMSClientI o1, GPMSClientI o2) {
                 return o1.getServerName().compareTo(o2.getServerName());

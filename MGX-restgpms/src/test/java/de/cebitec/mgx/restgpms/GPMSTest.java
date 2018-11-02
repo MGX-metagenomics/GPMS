@@ -11,6 +11,7 @@ import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
 import de.cebitec.gpms.core.ProjectI;
 import de.cebitec.gpms.core.RoleI;
+import de.cebitec.gpms.rest.GPMSClientI;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -57,7 +58,7 @@ public class GPMSTest {
     @Test
     public void getProjectClassesLoggedOut() {
         System.out.println("getProjectClassesLoggedOut");
-        GPMSClient gpms = TestMaster.get();
+        GPMSClientI gpms = TestMaster.get();
         Iterator<ProjectClassI> projectClasses = null;
         try {
             projectClasses = gpms.getProjectClasses();
@@ -73,7 +74,7 @@ public class GPMSTest {
     @Test
     public void testGetProjectClasses() {
         System.out.println("getProjectClasses");
-        GPMSClient gpms = TestMaster.get();
+        GPMSClientI gpms = TestMaster.get();
         try {
             gpms.login("mgx_unittestRO", "gut-isM5iNt");
         } catch (GPMSException ex) {
@@ -103,7 +104,7 @@ public class GPMSTest {
     @Test
     public void testGetMemberships() throws GPMSException {
         System.out.println("getMemberships");
-        GPMSClient gpms = TestMaster.get();
+        GPMSClientI gpms = TestMaster.get();
         gpms.login("mgx_unittestRO", "gut-isM5iNt");
         Iterator<MembershipI> memberships = gpms.getMemberships();
         assertNotNull(memberships);
@@ -131,7 +132,7 @@ public class GPMSTest {
     @Test
     public void testGetMembershipsRW() throws GPMSException {
         System.out.println("getMembershipsRW");
-        GPMSClient gpms = TestMaster.get();
+        GPMSClientI gpms = TestMaster.get();
         gpms.login("mgx_unittestRW", "hL0amo3oLae");
         Iterator<MembershipI> memberships = gpms.getMemberships();
         assertNotNull(memberships);
@@ -150,7 +151,7 @@ public class GPMSTest {
     @Test
     public void testGetMembershipsLoggedOut() throws GPMSException {
         System.out.println("testGetMembershipsLoggedOut");
-        GPMSClient gpms = TestMaster.get();
+        GPMSClientI gpms = TestMaster.get();
         Iterator<MembershipI> memberships = gpms.getMemberships();
         assertNotNull(memberships);
         assertFalse(memberships.hasNext());
@@ -159,7 +160,7 @@ public class GPMSTest {
     @Test
     public void testRESTDataSource() throws GPMSException {
         System.out.println("testRESTDataSource");
-        GPMSClient gpms = TestMaster.get();
+        GPMSClientI gpms = TestMaster.get();
         gpms.login("mgx_unittestRO", "gut-isM5iNt");
         Iterator<MembershipI> memberships = gpms.getMemberships();
         MasterI master = null;
@@ -191,7 +192,7 @@ public class GPMSTest {
         String login = "mgx_unittestRO";
         String password = "gut-isM5iNt";
         boolean result = false;
-        final GPMSClient cli = TestMaster.get();
+        final GPMSClientI cli = TestMaster.get();
         try {
             result = cli.login(login, password);
         } catch (GPMSException ex) {
@@ -243,7 +244,7 @@ public class GPMSTest {
         System.out.println("testLoginTwice");
         String login = "mgx_unittestRO";
         String password = "gut-isM5iNt";
-        GPMSClient gpms = TestMaster.get();
+        GPMSClientI gpms = TestMaster.get();
         assertNotNull(gpms);
         boolean result = false;
         try {
@@ -266,7 +267,7 @@ public class GPMSTest {
         System.out.println("testInvalidLogin");
         String login = "WRONG";
         String password = "WRONG";
-        GPMSClient gpms = TestMaster.get();
+        GPMSClientI gpms = TestMaster.get();
         assertNotNull(gpms);
         gpms.logout();
         boolean result = false;
@@ -283,7 +284,7 @@ public class GPMSTest {
     @Test
     public void testInvalidLogin2() {
         System.out.println("testInvalidLogin2");
-        GPMSClient gpms = TestMaster.get();
+        GPMSClientI gpms = TestMaster.get();
         assertNotNull(gpms);
 
         // call login() with wrong credentials on an instance that is already
@@ -304,7 +305,7 @@ public class GPMSTest {
     @Test
     public void testPing() {
         System.out.println("ping");
-        GPMSClient gpms = TestMaster.get();
+        GPMSClientI gpms = TestMaster.get();
         try {
             gpms.login("mgx_unittestRO", "gut-isM5iNt");
         } catch (GPMSException ex) {
@@ -319,7 +320,7 @@ public class GPMSTest {
     @Test
     public void testCreateMaster() throws GPMSException {
         System.out.println("createMaster");
-        GPMSClient gpms = TestMaster.get();
+        GPMSClientI gpms = TestMaster.get();
         gpms.login("mgx_unittestRO", "gut-isM5iNt");
         Iterator<MembershipI> memberships = gpms.getMemberships();
         assertNotNull(memberships);

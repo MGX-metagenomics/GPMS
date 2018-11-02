@@ -274,6 +274,11 @@ public class GPMSClient implements GPMSClientI {
         }
         return client.resource(gpmsBaseURI);
     }
+    
+     @Override
+    public synchronized boolean login(String login, char[] password) throws GPMSException {
+        return login(login, new String(password));
+    }
 
     @Override
     public synchronized boolean login(String login, String password) throws GPMSException {

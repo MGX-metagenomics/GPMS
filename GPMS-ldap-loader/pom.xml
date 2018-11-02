@@ -55,8 +55,8 @@
         </dependency>
         <dependency>
             <groupId>com.unboundid</groupId>
-            <artifactId>unboundid-ldapsdk</artifactId>
-            <version>4.0.5</version>
+             <artifactId>unboundid-ldapsdk</artifactId>
+            <version>4.0.1</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -93,7 +93,7 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>3.0.2</version>
                 <executions>
-                    <execution>
+              <!--      <execution>
                         <phase>validate</phase>
                         <goals>
                             <goal>copy</goal>
@@ -110,6 +110,16 @@
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
+                    </execution> -->
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <includeScope>compile</includeScope>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -121,6 +131,20 @@
                     <parallel>classes</parallel>
                     <threadCount>8</threadCount>
                 </configuration> -->
+            </plugin>
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>de.cebitec.gpms.loader.ldap.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
             </plugin>
         </plugins>
     </build>

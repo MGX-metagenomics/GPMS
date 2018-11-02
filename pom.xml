@@ -51,19 +51,6 @@
         <module>GPMS-Nodes</module>
     </modules>
 
-    <distributionManagement>
-        <repository>
-            <id>artifactory</id>
-            <name>local-libs-release</name>
-            <url>https://${artifactory.host}/artifactory/libs-release-local</url>
-        </repository>
-        <snapshotRepository>
-            <id>artifactory</id>
-            <name>local-libs-snapshot</name>
-            <url>https://${artifactory.host}/artifactory/libs-snapshot-local</url>
-        </snapshotRepository>
-    </distributionManagement>
-    
     <repositories>
         <repository>
             <id>netbeans</id>

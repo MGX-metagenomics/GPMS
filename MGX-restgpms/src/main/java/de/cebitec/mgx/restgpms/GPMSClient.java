@@ -43,6 +43,7 @@ import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.cert.CertificateExpiredException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -172,7 +173,7 @@ public class GPMSClient implements GPMSClientI {
 
             cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(null, ctx));
         }
-        
+
         client = Client.create(cc);
     }
 
@@ -274,8 +275,8 @@ public class GPMSClient implements GPMSClientI {
         }
         return client.resource(gpmsBaseURI);
     }
-    
-     @Override
+
+    @Override
     public synchronized boolean login(String login, char[] password) throws GPMSException {
         return login(login, new String(password));
     }
@@ -301,7 +302,13 @@ public class GPMSClient implements GPMSClientI {
         } catch (ClientHandlerException che) {
             if (che.getCause() != null && che.getCause() instanceof SSLHandshakeException) {
                 SSLHandshakeException she = (SSLHandshakeException) che.getCause();
-                System.err.println(she);
+                Throwable t = she.getCause();
+                while (t.getCause() != null) {
+                    t = t.getCause();
+                }
+                if (t instanceof CertificateExpiredException) {
+                    throw new GPMSException("Server SSL certificate expired: " + t.getMessage());
+                }
                 return login(login, password);
             } else if (che.getCause() != null && che.getCause() instanceof UnknownHostException) {
                 throw new GPMSException("Could not resolve server address. Check your internet connection.");

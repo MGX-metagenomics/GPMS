@@ -73,6 +73,7 @@ public class GPMSClient implements GPMSClientI {
     private final String servername;
     private UserI user;
     private boolean loggedin = false;
+    private boolean validateSSL = true;
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
 
     private final static DataSourceTypeI REST_DSTYPE = new DataSourceTypeI() {
@@ -116,6 +117,7 @@ public class GPMSClient implements GPMSClientI {
         if (requireSSL && !gpmsBaseURI.startsWith("https://")) {
             throw new IllegalArgumentException("Secure connection required.");
         }
+        this.validateSSL = requireSSL;
         this.servername = servername;
         this.gpmsBaseURI = gpmsBaseURI;
         cc = new DefaultClientConfig();
@@ -125,7 +127,7 @@ public class GPMSClient implements GPMSClientI {
         cc.getProperties().put(ClientConfig.PROPERTY_CONNECT_TIMEOUT, 10000); // in ms
         cc.getProperties().put(ClientConfig.PROPERTY_READ_TIMEOUT, 30000);
 
-        if (!requireSSL) {
+        if (!this.validateSSL) {
 
             /*
              * taken from
@@ -396,6 +398,11 @@ public class GPMSClient implements GPMSClientI {
         return loggedin;
     }
 
+    @Override
+    public boolean validateSSL() {
+        return validateSSL;
+    }
+    
     @Override
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         pcs.addPropertyChangeListener(listener);

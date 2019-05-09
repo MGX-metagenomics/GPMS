@@ -35,6 +35,11 @@ public class RESTMaster implements RESTMasterI, PropertyChangeListener {
     }
 
     @Override
+    public boolean validateSSL() {
+        return gpmsclient.validateSSL();
+    }
+
+    @Override
     public String getServerName() {
         return gpmsclient.getServerName();
     }

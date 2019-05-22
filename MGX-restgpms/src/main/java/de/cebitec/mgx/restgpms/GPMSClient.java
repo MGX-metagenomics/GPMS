@@ -36,6 +36,7 @@ import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.cert.CertificateExpiredException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -78,6 +79,7 @@ public class GPMSClient implements GPMSClientI {
     private final String servername;
     private UserI user;
     private boolean loggedin = false;
+    private boolean validateSSL = true;
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
 
     private final static DataSourceTypeI REST_DSTYPE = new DataSourceTypeI() {
@@ -121,6 +123,7 @@ public class GPMSClient implements GPMSClientI {
         if (requireSSL && !gpmsBaseURI.startsWith("https://")) {
             throw new IllegalArgumentException("Secure connection required.");
         }
+        this.validateSSL = requireSSL;
         this.servername = servername;
         this.gpmsBaseURI = gpmsBaseURI;
         cc = new ClientConfig();
@@ -129,7 +132,7 @@ public class GPMSClient implements GPMSClientI {
 
 //        cc.connectorProvider(new GrizzlyConnectorProvider());
 
-        if (!requireSSL) {
+        if (!this.validateSSL) {
 
             /*
              * taken from
@@ -309,7 +312,7 @@ public class GPMSClient implements GPMSClientI {
     }
 
     @Override
-    public boolean login(String login, char[] password) throws GPMSException {
+    public synchronized boolean login(String login, char[] password) throws GPMSException {
         return login(login, new String(password));
     }
 
@@ -354,7 +357,13 @@ public class GPMSClient implements GPMSClientI {
         } catch (ProcessingException che) {
             if (che.getCause() != null && che.getCause() instanceof SSLHandshakeException) {
                 SSLHandshakeException she = (SSLHandshakeException) che.getCause();
-                System.err.println(she);
+                Throwable t = she.getCause();
+                while (t.getCause() != null) {
+                    t = t.getCause();
+                }
+                if (t instanceof CertificateExpiredException) {
+                    throw new GPMSException("Server SSL certificate expired: " + t.getMessage());
+                }
                 return login(login, password);
             } else if (che.getCause() != null && che.getCause() instanceof UnknownHostException) {
                 throw new GPMSException("Could not resolve server address. Check your internet connection.");
@@ -440,6 +449,11 @@ public class GPMSClient implements GPMSClientI {
         return loggedin;
     }
 
+    @Override
+    public boolean validateSSL() {
+        return validateSSL;
+    }
+    
     @Override
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         pcs.addPropertyChangeListener(listener);

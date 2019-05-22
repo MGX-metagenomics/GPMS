@@ -20,6 +20,8 @@ public interface GPMSClientI {
     public String getBaseURI();
 
     public String getServerName();
+    
+    public boolean validateSSL();
 
     public Iterator<ProjectClassI> getProjectClasses() throws GPMSException;
 

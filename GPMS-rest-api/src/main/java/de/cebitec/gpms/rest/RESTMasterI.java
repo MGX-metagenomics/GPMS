@@ -15,4 +15,6 @@ public interface RESTMasterI extends MasterI {
     
     public String getServerName();
     
+    public boolean validateSSL();
+    
 }

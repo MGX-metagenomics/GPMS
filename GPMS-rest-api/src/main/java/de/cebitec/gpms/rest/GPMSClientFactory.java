@@ -35,6 +35,9 @@ public class GPMSClientFactory {
         } else {
             BundleContext context = FrameworkUtil.getBundle(GPMSClientFactory.class).getBundleContext();
             ServiceReference<ClientCreatorI> serviceReference = (ServiceReference<ClientCreatorI>) context.getServiceReference(ClientCreatorI.class.getName());
+            if (serviceReference == null) {
+                throw new GPMSException("Unable to obtain service reference for ClientCreatorI.");
+            }
             ClientCreatorI service = context.<ClientCreatorI>getService(serviceReference);
             return service.createClient(serverName, baseURI);
         }

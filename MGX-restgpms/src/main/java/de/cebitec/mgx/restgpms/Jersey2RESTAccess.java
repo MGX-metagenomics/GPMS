@@ -6,28 +6,20 @@
 package de.cebitec.mgx.restgpms;
 
 import de.cebitec.gpms.rest.RESTException;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientHandlerException;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
-import com.sun.jersey.api.client.filter.LoggingFilter;
-import com.sun.jersey.client.urlconnection.HTTPSProperties;
 import de.cebitec.gpms.core.DataSource_ApplicationServerI;
 import de.cebitec.gpms.core.UserI;
 import de.cebitec.gpms.rest.RESTAccessI;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.HostnameVerifier;
@@ -37,26 +29,37 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Feature;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 /**
  *
  * @author sjaenick
  */
-public class Jersey1RESTAccess implements RESTAccessI {
+public class Jersey2RESTAccess implements RESTAccessI {
 
     public final static String PROTOBUF_TYPE = "application/x-protobuf";
-    private final Client client;
+
     private final ClientConfig cc;
-    private final URI resource;
+    private final WebTarget wt;
     private final int numRetriesAllowed = 5;
 
     private final static boolean LOG_REQUESTS = false;
 
-    public Jersey1RESTAccess(UserI user, DataSource_ApplicationServerI appServer, boolean verifySSL, Class... serializers) {
-        cc = new DefaultClientConfig();
-        cc.getProperties().put(ClientConfig.PROPERTY_THREADPOOL_SIZE, 10);
-        cc.getProperties().put(ClientConfig.PROPERTY_CONNECT_TIMEOUT, 10000); // in ms
-        cc.getProperties().put(ClientConfig.PROPERTY_READ_TIMEOUT, 100000); // in ms
+    public Jersey2RESTAccess(UserI user, DataSource_ApplicationServerI appServer, boolean verifySSL, Class... serializers) {
+
+        cc = new ClientConfig();
+
+        SSLContext ctx = null;
+        HostnameVerifier verifier = null;
 
         if (!verifySSL) {
 
@@ -83,7 +86,6 @@ public class Jersey1RESTAccess implements RESTAccessI {
                 }
             }};
 
-            SSLContext ctx = null;
             try {
                 ctx = SSLContext.getInstance("SSL");
                 ctx.init(null, trustAllCerts, new SecureRandom());
@@ -93,7 +95,7 @@ public class Jersey1RESTAccess implements RESTAccessI {
             }
 
             // Create all-trusting host name verifier
-            HostnameVerifier allHostsValid = new HostnameVerifier() {
+            verifier = new HostnameVerifier() {
                 @Override
                 public boolean verify(String hostname, SSLSession session) {
                     return true;
@@ -101,9 +103,9 @@ public class Jersey1RESTAccess implements RESTAccessI {
             };
 
             // Install the all-trusting host verifier
-            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+            HttpsURLConnection.setDefaultHostnameVerifier(verifier);
 
-            cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(null, ctx));
+            //cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(null, ctx));
         }
 
         for (Class clazz : serializers) {
@@ -112,15 +114,35 @@ public class Jersey1RESTAccess implements RESTAccessI {
             }
         }
 
-        cc.getClasses().add(de.cebitec.mgx.protobuf.serializer.PBReader.class);
-        cc.getClasses().add(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
+        cc.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
+        cc.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
+        Feature feature = HttpAuthenticationFeature.basic(user.getLogin(), user.getPassword());
+        cc.register(feature);
+        
+//        cc.connectorProvider(new GrizzlyConnectorProvider());
 
-        client = Client.create(cc);
-        if (LOG_REQUESTS) {
-            client.addFilter(new LoggingFilter(System.out));
+        Client client;
+        if (ctx != null && verifier != null) {
+            client = ClientBuilder.newBuilder()
+                    .withConfig(cc)
+                    .sslContext(ctx)
+                    .hostnameVerifier(verifier)
+                    .connectTimeout(10000, TimeUnit.MILLISECONDS)
+                    .readTimeout(100000, TimeUnit.MILLISECONDS)
+                    .build();
+
+        } else {
+            client = ClientBuilder.newBuilder()
+                    .withConfig(cc)
+                    .connectTimeout(10000, TimeUnit.MILLISECONDS)
+                    .readTimeout(100000, TimeUnit.MILLISECONDS)
+                    .build();
         }
-        client.addFilter(new HTTPBasicAuthFilter(user.getLogin(), user.getPassword()));
-        this.resource = appServer.getURL();
+
+//        if (LOG_REQUESTS) {
+//            client.addFilter(new LoggingFilter(System.out));
+//        }
+        wt = client.target(appServer.getURL());
     }
 
     /**
@@ -134,16 +156,15 @@ public class Jersey1RESTAccess implements RESTAccessI {
      */
     @Override
     public final <U> U put(Object obj, Class<U> c, final String... path) throws RESTException {
-        WebResource.Builder buildPath = buildPath(path);
+        Invocation.Builder buildPath = buildPath(path);
         return put(obj, c, buildPath, numRetriesAllowed);
     }
 
-    private <U> U put(Object obj, Class<U> c, WebResource.Builder buildPath, int numRetries) throws RESTException {
-        try {
-            ClientResponse res = buildPath.put(ClientResponse.class, obj);
+    private <U> U put(Object obj, Class<U> c, Invocation.Builder buildPath, int numRetries) throws RESTException {
+        try (Response res = buildPath.put(Entity.entity(obj, PROTOBUF_TYPE))) {
             catchException(res);
-            return res.<U>getEntity(c);
-        } catch (ClientHandlerException ex) {
+            return res.readEntity(c);
+        } catch (ProcessingException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -159,15 +180,14 @@ public class Jersey1RESTAccess implements RESTAccessI {
 
     @Override
     public final void put(Object obj, final String... path) throws RESTException {
-        WebResource.Builder buildPath = buildPath(path);
+        Invocation.Builder buildPath = buildPath(path);
         put(obj, buildPath, numRetriesAllowed);
     }
 
-    private void put(Object obj, WebResource.Builder buildPath, int numRetries) throws RESTException {
-        try {
-            ClientResponse res = buildPath.put(ClientResponse.class, obj);
+    private void put(Object obj, Invocation.Builder buildPath, int numRetries) throws RESTException {
+        try (Response res = buildPath.put(Entity.entity(obj, PROTOBUF_TYPE))) {
             catchException(res);
-        } catch (ClientHandlerException ex) {
+        } catch (ProcessingException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -184,16 +204,15 @@ public class Jersey1RESTAccess implements RESTAccessI {
     @Override
     public final void get(final String... path) throws RESTException {
         //System.err.println("GET uri: " +getWebResource().path(path).getURI().toASCIIString());
-        WebResource.Builder buildPath = buildPath(path);
+        Invocation.Builder buildPath = buildPath(path);
         get(buildPath, numRetriesAllowed);
 
     }
 
-    private void get(WebResource.Builder buildPath, int numRetries) throws RESTException {
-        try {
-            ClientResponse res = buildPath.get(ClientResponse.class);
+    private void get(Invocation.Builder buildPath, int numRetries) throws RESTException {
+        try (Response res = buildPath.get(Response.class)) {
             catchException(res);
-        } catch (ClientHandlerException ex) {
+        } catch (ProcessingException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -209,16 +228,15 @@ public class Jersey1RESTAccess implements RESTAccessI {
 
     @Override
     public final <U> U get(Class<U> c, final String... path) throws RESTException {
-        WebResource.Builder buildPath = buildPath(path);
+        Invocation.Builder buildPath = buildPath(path);
         return get(c, buildPath, numRetriesAllowed);
     }
 
-    private <U> U get(Class<U> c, WebResource.Builder buildPath, int numRetries) throws RESTException {
-        try {
-            ClientResponse res = buildPath.get(ClientResponse.class);
+    private <U> U get(Class<U> c, Invocation.Builder buildPath, int numRetries) throws RESTException {
+        try (Response res = buildPath.get(Response.class)) {
             catchException(res);
-            return res.<U>getEntity(c);
-        } catch (ClientHandlerException ex) {
+            return res.readEntity(c);
+        } catch (ProcessingException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -235,16 +253,15 @@ public class Jersey1RESTAccess implements RESTAccessI {
     @Override
     public final <U> U delete(Class<U> clazz, final String... path) throws RESTException {
         //System.err.println("DELETE uri: " +getWebResource().path(path).getURI().toASCIIString());
-        WebResource.Builder buildPath = buildPath(path);
+        Invocation.Builder buildPath = buildPath(path);
         return delete(clazz, buildPath, numRetriesAllowed);
     }
 
-    private <U> U delete(Class<U> clazz, WebResource.Builder buildPath, int numRetries) throws RESTException {
-        try {
-            ClientResponse res = buildPath.delete(ClientResponse.class);
+    private <U> U delete(Class<U> clazz, Invocation.Builder buildPath, int numRetries) throws RESTException {
+        try (Response res = buildPath.delete(Response.class)) {
             catchException(res);
-            return res.<U>getEntity(clazz);
-        } catch (ClientHandlerException ex) {
+            return res.readEntity(clazz);
+        } catch (ProcessingException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -261,15 +278,14 @@ public class Jersey1RESTAccess implements RESTAccessI {
     @Override
     public final void delete(final String... path) throws RESTException {
         //System.err.println("DELETE uri: " +getWebResource().path(path).getURI().toASCIIString());
-        WebResource.Builder buildPath = buildPath(path);
+        Invocation.Builder buildPath = buildPath(path);
         delete(buildPath, numRetriesAllowed);
     }
 
-    private void delete(WebResource.Builder buildPath, int numRetries) throws RESTException {
-        try {
-            ClientResponse res = buildPath.delete(ClientResponse.class);
+    private void delete(Invocation.Builder buildPath, int numRetries) throws RESTException {
+        try (Response res = buildPath.delete(Response.class)) {
             catchException(res);
-        } catch (ClientHandlerException ex) {
+        } catch (ProcessingException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -285,15 +301,14 @@ public class Jersey1RESTAccess implements RESTAccessI {
 
     @Override
     public final void post(Object obj, final String... path) throws RESTException {
-        WebResource.Builder buildPath = buildPath(path);
+        Invocation.Builder buildPath = buildPath(path);
         post(obj, buildPath, numRetriesAllowed);
     }
 
-    private void post(Object obj, WebResource.Builder buildPath, int numRetries) throws RESTException {
-        try {
-            ClientResponse res = buildPath.post(ClientResponse.class, obj);
+    private void post(Object obj, Invocation.Builder buildPath, int numRetries) throws RESTException {
+        try (Response res = buildPath.post(Entity.entity(obj, PROTOBUF_TYPE))) {
             catchException(res);
-        } catch (ClientHandlerException ex) {
+        } catch (ProcessingException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -309,16 +324,15 @@ public class Jersey1RESTAccess implements RESTAccessI {
 
     @Override
     public <U> U post(Object obj, Class<U> targetClass, String... path) throws RESTException {
-        WebResource.Builder buildPath = buildPath(path);
+        Invocation.Builder buildPath = buildPath(path);
         return post(obj, targetClass, buildPath, numRetriesAllowed);
     }
 
-    private <U> U post(Object obj, Class<U> targetClass, WebResource.Builder buildPath, int numRetries) throws RESTException {
-        try {
-            ClientResponse res = buildPath.post(ClientResponse.class, obj);
+    private <U> U post(Object obj, Class<U> targetClass, Invocation.Builder buildPath, int numRetries) throws RESTException {
+        try (Response res = buildPath.post(Entity.entity(obj, PROTOBUF_TYPE))) {
             catchException(res);
-            return res.<U>getEntity(targetClass);
-        } catch (ClientHandlerException ex) {
+            return res.readEntity(targetClass);
+        } catch (ProcessingException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -332,23 +346,24 @@ public class Jersey1RESTAccess implements RESTAccessI {
         }
     }
 
-    private WebResource.Builder buildPath(String... pathComponents) {
-        WebResource wr = client.resource(resource);
+    private Invocation.Builder buildPath(String... pathComponents) {
+        WebTarget wr = wt; //client.target(resource);
         try {
             for (String s : pathComponents) {
                 wr = wr.path(URLEncoder.encode(s, "UTF-8"));
             }
             //System.err.println(wr.getURI().toASCIIString());
-            return wr.type(PROTOBUF_TYPE).accept(PROTOBUF_TYPE);
+
+            return wr.request(PROTOBUF_TYPE).accept(PROTOBUF_TYPE);
         } catch (UnsupportedEncodingException ex) {
-            throw new ClientHandlerException(ex);
+            throw new RuntimeException(ex);
         }
     }
 
-    private void catchException(final ClientResponse res) throws RESTException {
-        if (ClientResponse.Status.fromStatusCode(res.getStatus()) != ClientResponse.Status.OK) {
+    private void catchException(final Response res) throws RESTException {
+        if (Response.Status.fromStatusCode(res.getStatus()) != Response.Status.OK) {
             StringBuilder msg = new StringBuilder();
-            try (BufferedReader r = new BufferedReader(new InputStreamReader(res.getEntityInputStream()))) {
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(res.readEntity(InputStream.class)))) {
                 String buf;
                 while ((buf = r.readLine()) != null) {
                     msg.append(buf);

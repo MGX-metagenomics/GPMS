@@ -7,6 +7,7 @@ import com.sun.enterprise.security.auth.realm.BadRealmException;
 import com.sun.enterprise.security.auth.realm.InvalidOperationException;
 import com.sun.enterprise.security.auth.realm.NoSuchRealmException;
 import com.sun.enterprise.security.auth.realm.NoSuchUserException;
+import com.unboundid.ldap.sdk.BindRequest;
 import com.unboundid.ldap.sdk.BindResult;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
@@ -14,9 +15,11 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ReadOnlySearchRequest;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.RoundRobinServerSet;
+import com.unboundid.ldap.sdk.ServerSet;
 import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchScope;
+import com.unboundid.ldap.sdk.SimpleBindRequest;
 import de.cebitec.gpms.core.UserI;
 import java.util.Arrays;
 import java.util.Collections;
@@ -144,9 +147,10 @@ public class GPMSGlassfishRealm extends AppservRealm {
             throw new BadRealmException("Empty host list");
         }
 
-        RoundRobinServerSet serverSet = new RoundRobinServerSet(hosts, ports);
+        ServerSet serverSet = new RoundRobinServerSet(hosts, ports);
         try {
-            ldapPool = new LDAPConnectionPool(serverSet, null, numConnections);
+            BindRequest breq = new SimpleBindRequest("cn=gpms_access," + basedn, "gpms");
+            ldapPool = new LDAPConnectionPool(serverSet, breq, numConnections);
         } catch (LDAPException ex) {
             log.log(Level.SEVERE, null, ex);
             return;

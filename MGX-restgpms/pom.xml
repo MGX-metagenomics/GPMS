@@ -1,18 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>de.cebitec.mgx</groupId>
-    <artifactId>MGX-restgpms</artifactId>
-    <version>1.1</version>
-    <packaging>bundle</packaging>
     
     <parent>
         <artifactId>GPMS</artifactId>
         <groupId>de.cebitec.gpms</groupId>
-        <version>1.1</version>
+        <version>2.0</version>
     </parent>
-
+    
+    <groupId>de.cebitec.mgx</groupId>
+    <artifactId>MGX-restgpms</artifactId>
+    <packaging>bundle</packaging>
     <name>MGX-restgpms</name>
     
     <build>
@@ -20,7 +18,7 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>4.1.0</version>
                 <extensions>true</extensions>
                 <executions>
                     <execution>
@@ -34,10 +32,17 @@
                         <Import-Package>
                             org.osgi.framework,
                             javax.net.ssl,
-                            com.sun.jersey.api.client,
-                            com.sun.jersey.api.client.filter,
-                            com.sun.jersey.api.client.config,
-                            com.sun.jersey.client.urlconnection,
+                            javax.annotation,
+                            org.glassfish.jersey.client,
+                            org.glassfish.jersey.internal,
+                            org.glassfish.jersey.client.authentication,
+                            org.glassfish.hk2.api,
+                            org.glassfish.hk2.api.messaging,
+                            org.glassfish.hk2.extension,
+                            org.glassfish.hk2.utilities.reflection,
+                            javax.ws.rs,
+                            javax.ws.rs.core,
+                            javax.ws.rs.client,
                             de.cebitec.gpms.core,
                             de.cebitec.gpms.rest,
                             de.cebitec.gpms.dto,
@@ -52,16 +57,16 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>3.8.0</version>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>${java.src.version}</source>
+                    <target>${java.target.version}</target>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
+                <version>3.1.1</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -90,17 +95,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.20.1</version>
+                <version>3.0.0-M3</version>
             </plugin>
         </plugins>
     </build>
+    
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
-        <exam.version>4.11.0</exam.version>
-        <url.version>2.5.3</url.version>
-        <logback.version>1.1.3</logback.version>
+        <exam.version>4.13.1</exam.version>
+        <url.version>2.6.1</url.version>
     </properties>
 
     <dependencies>
@@ -113,17 +116,17 @@
         <dependency>
             <groupId>de.cebitec.gpms</groupId>
             <artifactId>GPMS-rest-api</artifactId>
-            <version>1.1</version>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>de.cebitec.gpms</groupId>
             <artifactId>GPMS-core-api</artifactId>
-            <version>1.1</version>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>ProtoBuf-Serializer</artifactId>
-            <version>1.0</version>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>org.ops4j.pax.exam</groupId>
@@ -164,7 +167,7 @@
         <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.framework</artifactId>
-            <version>5.6.10</version>
+            <version>6.0.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -180,19 +183,50 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.sun.jersey</groupId>
+            <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
-            <version>1.18.2</version>
+            <version>2.28</version>
         </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>2.28</version>
+        </dependency>
+        <!--
+<dependency>
+    <groupId>org.glassfish.jersey.connectors</groupId>
+    <artifactId>jersey-grizzly-connector</artifactId>
+    <version>2.28</version>
+</dependency>
+        -->
         <dependency>
             <groupId>de.cebitec.gpms</groupId>
             <artifactId>GPMS-DTO</artifactId>
-            <version>1.1</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>de.cebitec.gpms</groupId>
             <artifactId>GPMS-model</artifactId>
-            <version>1.1</version>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <!--
+<dependency>
+    <groupId>javax.annotation</groupId>
+    <artifactId>javax.annotation-api</artifactId>
+    <version>1.3.2</version>
+</dependency>
+        <dependency>
+    <groupId>jakarta.annotation</groupId>
+    <artifactId>jakarta.annotation-api</artifactId>
+    <version>1.3.4</version>
+    <scope>provided</scope>
+</dependency>
+        -->
+        <dependency>
+            <groupId>org.glassfish.hk2</groupId>
+            <artifactId>hk2-utils</artifactId>
+            <version>2.5.0</version>
         </dependency>
     </dependencies>
 

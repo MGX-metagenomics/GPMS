@@ -43,7 +43,9 @@ public class GPMSTest {
     @Configuration
     public static Option[] configuration() {
         return options(
+                //bootDelegationPackage("javax.annotation"),
                 junitBundles(),
+                mavenBundle("javax.annotation", "javax.annotation-api", "1.3.2"),
                 mavenBundle().groupId("org.glassfish.jersey.core").artifactId("jersey-client").version("2.28"),
                 mavenBundle().groupId("org.glassfish.jersey.core").artifactId("jersey-common").version("2.28"),
                 mavenBundle().groupId("org.glassfish.hk2").artifactId("hk2-api").version("2.5.0"),
@@ -54,9 +56,8 @@ public class GPMSTest {
                 mavenBundle().groupId("org.javassist").artifactId("javassist").version("3.22.0-CR2"),
                 mavenBundle().groupId("jakarta.ws.rs").artifactId("jakarta.ws.rs-api").version("2.1.5"),
                 //mavenBundle().groupId("jakarta.annotation").artifactId("jakarta.annotation-api").version("1.3.4"),
-                //mavenBundle().groupId("javax.annotation").artifactId("javax.annotation-api").version("1.3.2"),
                 mavenBundle().groupId("org.glassfish.jersey.inject").artifactId("jersey-hk2").version("2.28"),
-                mavenBundle().groupId("com.google.protobuf").artifactId("protobuf-java").version("3.7.0"),
+                mavenBundle().groupId("com.google.protobuf").artifactId("protobuf-java").version("3.7.1"),
                 mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-DTO").version("2.0"),
                 mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-core-api").version("2.0"),
                 mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-rest-api").version("2.0"),

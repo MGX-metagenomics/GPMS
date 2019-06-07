@@ -20,16 +20,10 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.glassfish.security</groupId>
-            <artifactId>security</artifactId>
-            <version>3.1.1</version>
+            <groupId>org.glassfish.main.common</groupId>
+            <artifactId>glassfish-ee-api</artifactId>
+            <version>5.1.0</version>
             <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.persistence</groupId>
-                    <artifactId>javax.persistence</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>

@@ -35,29 +35,33 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
+import org.jboss.resteasy.client.jaxrs.internal.BasicAuthentication;
+//import org.glassfish.jersey.client.ClientConfig;
+//import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 /**
  *
  * @author sjaenick
  */
-public class Jersey2RESTAccess implements RESTAccessI {
+public class JAXRSRESTAccess implements RESTAccessI {
 
     public final static String PROTOBUF_TYPE = "application/x-protobuf";
 
-    private final ClientConfig cc;
+    //private final ClientConfig cc;
     private final WebTarget wt;
     private final int numRetriesAllowed = 5;
 
     private final static boolean LOG_REQUESTS = false;
 
-    public Jersey2RESTAccess(UserI user, DataSource_ApplicationServerI appServer, boolean verifySSL, Class... serializers) {
+    public JAXRSRESTAccess(UserI user, DataSource_ApplicationServerI appServer, boolean verifySSL, Class... serializers) {
 
-        cc = new ClientConfig();
-
+        //cc = new ClientConfig();
         SSLContext ctx = null;
         HostnameVerifier verifier = null;
 
@@ -108,23 +112,29 @@ public class Jersey2RESTAccess implements RESTAccessI {
             //cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(null, ctx));
         }
 
-        for (Class clazz : serializers) {
-            if (!cc.getClasses().contains(clazz)) {
-                cc.getClasses().add(clazz);
-            }
-        }
-
-        cc.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
-        cc.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
-        Feature feature = HttpAuthenticationFeature.basic(user.getLogin(), user.getPassword());
-        cc.register(feature);
-        
-//        cc.connectorProvider(new GrizzlyConnectorProvider());
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        CloseableHttpClient httpClient = HttpClients.custom().setConnectionManager(cm).build();
+        cm.setMaxTotal(200); // Increase max total connection to 200
+        cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
+        ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
 
         Client client;
+
+        ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
+                .newBuilder())
+                .httpEngine(engine);
+
+        for (Class clazz : serializers) {
+            cb.register(clazz);
+        }
+
+//        cb.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
+//        cb.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
+
+        //cb.register(new HTTPAuthenticator(user.getLogin(), user.getPassword()));
         if (ctx != null && verifier != null) {
-            client = ClientBuilder.newBuilder()
-                    .withConfig(cc)
+            client = cb
+                    //.withConfig(cc)
                     .sslContext(ctx)
                     .hostnameVerifier(verifier)
                     .connectTimeout(10000, TimeUnit.MILLISECONDS)
@@ -132,8 +142,8 @@ public class Jersey2RESTAccess implements RESTAccessI {
                     .build();
 
         } else {
-            client = ClientBuilder.newBuilder()
-                    .withConfig(cc)
+            client = cb
+                    //.withConfig(cc)
                     .connectTimeout(10000, TimeUnit.MILLISECONDS)
                     .readTimeout(100000, TimeUnit.MILLISECONDS)
                     .build();
@@ -143,6 +153,10 @@ public class Jersey2RESTAccess implements RESTAccessI {
 //            client.addFilter(new LoggingFilter(System.out));
 //        }
         wt = client.target(appServer.getURL());
+        wt.register(new BasicAuthentication(user.getLogin(), user.getPassword()));
+
+        wt.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
+        wt.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
     }
 
     /**
@@ -376,15 +390,4 @@ public class Jersey2RESTAccess implements RESTAccessI {
         }
     }
 
-//    @Override
-//    public DataSourceTypeI getType() {
-//        return new DataSourceTypeI() {
-//
-//            @Override
-//            public String getName() {
-//                return DataSourceTypeI.REST;
-//            }
-//
-//        };
-//    }
 }

@@ -25,7 +25,7 @@ import de.cebitec.gpms.model.Role;
 import de.cebitec.gpms.model.User;
 import de.cebitec.gpms.rest.GPMSClientI;
 import de.cebitec.gpms.rest.RESTMasterI;
-import static de.cebitec.mgx.restgpms.Jersey2RESTAccess.PROTOBUF_TYPE;
+import static de.cebitec.mgx.restgpms.JAXRSRESTAccess.PROTOBUF_TYPE;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.UnsupportedEncodingException;
@@ -58,11 +58,10 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.internal.BasicAuthentication;
 
 /**
  *
@@ -70,7 +69,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  */
 public class GPMSClient implements GPMSClientI {
 
-    private final ClientConfig cc;
+    //private final ClientConfig cc;
     private Client client;
     private WebTarget wt;
     private SSLContext ctx = null;
@@ -126,11 +125,6 @@ public class GPMSClient implements GPMSClientI {
         this.validateSSL = requireSSL;
         this.servername = servername;
         this.gpmsBaseURI = gpmsBaseURI;
-        cc = new ClientConfig();
-        cc.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
-        cc.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
-
-//        cc.connectorProvider(new GrizzlyConnectorProvider());
 
         if (!this.validateSSL) {
 
@@ -181,8 +175,8 @@ public class GPMSClient implements GPMSClientI {
         }
 
         if (ctx != null && verifier != null) {
+
             client = ClientBuilder.newBuilder()
-                    .withConfig(cc)
                     .sslContext(ctx)
                     .hostnameVerifier(verifier)
                     .connectTimeout(10000, TimeUnit.MILLISECONDS)
@@ -191,7 +185,6 @@ public class GPMSClient implements GPMSClientI {
 
         } else {
             client = ClientBuilder.newBuilder()
-                    .withConfig(cc)
                     .connectTimeout(10000, TimeUnit.MILLISECONDS)
                     .readTimeout(30000, TimeUnit.MILLISECONDS)
                     .build();
@@ -326,9 +319,11 @@ public class GPMSClient implements GPMSClientI {
             return false;
         }
 
+        ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
+                .newBuilder());
+
         if (ctx != null && verifier != null) {
             client = ClientBuilder.newBuilder()
-                    .withConfig(cc)
                     .sslContext(ctx)
                     .hostnameVerifier(verifier)
                     .connectTimeout(10000, TimeUnit.MILLISECONDS)
@@ -337,16 +332,16 @@ public class GPMSClient implements GPMSClientI {
 
         } else {
             client = ClientBuilder.newBuilder()
-                    .withConfig(cc)
                     .connectTimeout(10000, TimeUnit.MILLISECONDS)
                     .readTimeout(30000, TimeUnit.MILLISECONDS)
                     .build();
         }
 
-        Feature feature = HttpAuthenticationFeature.basic(login, password);
-        client.register(feature);
-
         wt = client.target(gpmsBaseURI);
+        wt.register(new BasicAuthentication(login, password));
+
+        wt.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
+        wt.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
 
         loggedin = false;
         user = null;
@@ -377,7 +372,7 @@ public class GPMSClient implements GPMSClientI {
                 GPMSString reply = response.readEntity(GPMSString.class);
                 if ("MGX".equals(reply.getValue())) {
                     loggedin = true;
-                    user = new User(login, password, new ArrayList<MembershipI>());
+                    user = new User(login, password, new ArrayList<>());
                 }
                 break;
             case UNAUTHORIZED:
@@ -453,7 +448,7 @@ public class GPMSClient implements GPMSClientI {
     public boolean validateSSL() {
         return validateSSL;
     }
-    
+
     @Override
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         pcs.addPropertyChangeListener(listener);

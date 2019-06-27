@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -59,7 +60,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
 
     private final static boolean LOG_REQUESTS = false;
 
-    public JAXRSRESTAccess(UserI user, DataSource_ApplicationServerI appServer, boolean verifySSL, Class... serializers) {
+    public JAXRSRESTAccess(UserI user, URI appServerURI, boolean verifySSL, Class... serializers) {
 
         //cc = new ClientConfig();
         SSLContext ctx = null;
@@ -130,7 +131,6 @@ public class JAXRSRESTAccess implements RESTAccessI {
 
 //        cb.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
 //        cb.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
-
         //cb.register(new HTTPAuthenticator(user.getLogin(), user.getPassword()));
         if (ctx != null && verifier != null) {
             client = cb
@@ -149,10 +149,8 @@ public class JAXRSRESTAccess implements RESTAccessI {
                     .build();
         }
 
-//        if (LOG_REQUESTS) {
-//            client.addFilter(new LoggingFilter(System.out));
-//        }
-        wt = client.target(appServer.getURL());
+        wt = client.target(appServerURI);
+
         wt.register(new BasicAuthentication(user.getLogin(), user.getPassword()));
 
         wt.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);

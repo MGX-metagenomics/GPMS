@@ -6,7 +6,6 @@
 package de.cebitec.mgx.restgpms;
 
 import de.cebitec.gpms.rest.RESTException;
-import de.cebitec.gpms.core.DataSource_ApplicationServerI;
 import de.cebitec.gpms.core.UserI;
 import de.cebitec.gpms.rest.RESTAccessI;
 import java.io.BufferedReader;
@@ -55,6 +54,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
     public final static String PROTOBUF_TYPE = "application/x-protobuf";
 
     //private final ClientConfig cc;
+    private final ApacheHttpClient43Engine engine;
     private final WebTarget wt;
     private final int numRetriesAllowed = 5;
 
@@ -117,7 +117,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
         CloseableHttpClient httpClient = HttpClients.custom().setConnectionManager(cm).build();
         cm.setMaxTotal(200); // Increase max total connection to 200
         cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
-        ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
+        engine = new ApacheHttpClient43Engine(httpClient);
 
         Client client;
 
@@ -151,10 +151,17 @@ public class JAXRSRESTAccess implements RESTAccessI {
 
         wt = client.target(appServerURI);
 
-        wt.register(new BasicAuthentication(user.getLogin(), user.getPassword()));
+        if (user != null) {
+            wt.register(new BasicAuthentication(user.getLogin(), user.getPassword()));
+        }
 
         wt.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
         wt.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
+    }
+
+    @Override
+    public void addFilter(Object crf) {
+        wt.register(crf);
     }
 
     /**
@@ -388,4 +395,8 @@ public class JAXRSRESTAccess implements RESTAccessI {
         }
     }
 
+    @Override
+    public void close() throws IOException {
+        engine.close();
+    }
 }

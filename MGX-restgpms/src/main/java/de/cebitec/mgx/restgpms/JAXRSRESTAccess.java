@@ -16,19 +16,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.security.KeyManagementException;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -36,14 +31,16 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
 import org.jboss.resteasy.client.jaxrs.internal.BasicAuthentication;
-//import org.glassfish.jersey.client.ClientConfig;
-//import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 /**
  *
@@ -58,63 +55,31 @@ public class JAXRSRESTAccess implements RESTAccessI {
     private final WebTarget wt;
     private final int numRetriesAllowed = 5;
 
-    private final static boolean LOG_REQUESTS = false;
-
     public JAXRSRESTAccess(UserI user, URI appServerURI, boolean verifySSL, Class... serializers) {
 
-        //cc = new ClientConfig();
-        SSLContext ctx = null;
-        HostnameVerifier verifier = null;
-
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        CloseableHttpClient httpClient;
         if (!verifySSL) {
-
-            /*
-             * taken from
-             * http://stackoverflow.com/questions/6047996/ignore-self-signed-ssl-cert-using-jersey-client
-             * 
-             * code below disables certificate validation; required for servers running
-             * with self-signed or otherwise untrusted certificates
-             */
-            // Create a trust manager that does not validate certificate chains
-            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-                @Override
-                public X509Certificate[] getAcceptedIssuers() {
-                    return null;
-                }
-
-                @Override
-                public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                }
-
-                @Override
-                public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                }
-            }};
-
+            SSLContext sslContext = null;
             try {
-                ctx = SSLContext.getInstance("SSL");
-                ctx.init(null, trustAllCerts, new SecureRandom());
-                HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
-            } catch (NoSuchAlgorithmException | KeyManagementException ex) {
-                Logger.getLogger(RESTMaster.class.getName()).log(Level.SEVERE, null, ex);
+                sslContext = SSLContextBuilder
+                        .create()
+                        .loadTrustMaterial(new TrustSelfSignedStrategy())
+                        .build();
+            } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException ex) {
+                Logger.getLogger(JAXRSRESTAccess.class.getName()).log(Level.SEVERE, null, ex);
             }
 
-            // Create all-trusting host name verifier
-            verifier = new HostnameVerifier() {
-                @Override
-                public boolean verify(String hostname, SSLSession session) {
-                    return true;
-                }
-            };
+            HostnameVerifier allowAllHosts = new NoopHostnameVerifier();
+            SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts);
 
-            // Install the all-trusting host verifier
-            HttpsURLConnection.setDefaultHostnameVerifier(verifier);
-
-            //cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(null, ctx));
+            httpClient = HttpClients
+                    .custom()
+                    .setSSLSocketFactory(connectionFactory)
+                    .build();
+        } else {
+            httpClient = HttpClients.custom().setConnectionManager(cm).build();
         }
-
-        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-        CloseableHttpClient httpClient = HttpClients.custom().setConnectionManager(cm).build();
         cm.setMaxTotal(200); // Increase max total connection to 200
         cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
         engine = new ApacheHttpClient43Engine(httpClient);
@@ -129,21 +94,15 @@ public class JAXRSRESTAccess implements RESTAccessI {
             cb.register(clazz);
         }
 
-//        cb.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
-//        cb.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
-        //cb.register(new HTTPAuthenticator(user.getLogin(), user.getPassword()));
-        if (ctx != null && verifier != null) {
+        if (!verifySSL) {
             client = cb
-                    //.withConfig(cc)
-                    .sslContext(ctx)
-                    .hostnameVerifier(verifier)
+                    .disableTrustManager()
                     .connectTimeout(10000, TimeUnit.MILLISECONDS)
                     .readTimeout(100000, TimeUnit.MILLISECONDS)
                     .build();
 
         } else {
             client = cb
-                    //.withConfig(cc)
                     .connectTimeout(10000, TimeUnit.MILLISECONDS)
                     .readTimeout(100000, TimeUnit.MILLISECONDS)
                     .build();

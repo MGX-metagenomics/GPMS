@@ -46,7 +46,9 @@
                             org.jboss.resteasy.client.jaxrs.internal,
                             org.apache.http.impl.client,
                             org.apache.http.impl.conn,
+                            org.apache.http.ssl,
                             org.apache.http.conn,
+                            org.apache.http.conn.socket,
                             org.apache.http.client
                         </Import-Package>
                         <Export-Package>de.cebitec.mgx.restgpms</Export-Package>

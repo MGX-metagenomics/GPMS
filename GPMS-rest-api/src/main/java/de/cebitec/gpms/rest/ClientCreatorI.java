@@ -11,8 +11,6 @@ package de.cebitec.gpms.rest;
  */
 public interface ClientCreatorI {
 
-    public GPMSClientI createClient(String name, String baseURI);
-
     public GPMSClientI createClient(String name, String baseURI, boolean validateSSL);
 
 }

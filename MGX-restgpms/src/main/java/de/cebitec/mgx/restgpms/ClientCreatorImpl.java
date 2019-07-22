@@ -17,10 +17,10 @@ public class ClientCreatorImpl implements ClientCreatorI {
     public ClientCreatorImpl() {
     }
 
-    @Override
-    public GPMSClientI createClient(String name, String baseURI) {
-        return new GPMSClient(name, baseURI);
-    }
+//    @Override
+//    public GPMSClientI createClient(String name, String baseURI) {
+//        return new GPMSClient(name, baseURI);
+//    }
 
     @Override
     public GPMSClientI createClient(String name, String baseURI, boolean validateSSL) {

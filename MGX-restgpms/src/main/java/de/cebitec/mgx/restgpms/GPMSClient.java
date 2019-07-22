@@ -34,10 +34,9 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.security.KeyManagementException;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.cert.CertificateExpiredException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -47,12 +46,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -60,7 +55,15 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
 import org.jboss.resteasy.client.jaxrs.internal.BasicAuthentication;
 
 /**
@@ -70,10 +73,9 @@ import org.jboss.resteasy.client.jaxrs.internal.BasicAuthentication;
 public class GPMSClient implements GPMSClientI {
 
     //private final ClientConfig cc;
+    private ApacheHttpClient43Engine engine;
     private Client client;
     private WebTarget wt;
-    private SSLContext ctx = null;
-    private HostnameVerifier verifier = null;
     private final String gpmsBaseURI;
     private final String servername;
     private UserI user;
@@ -126,70 +128,58 @@ public class GPMSClient implements GPMSClientI {
         this.servername = servername;
         this.gpmsBaseURI = gpmsBaseURI;
 
-        if (!this.validateSSL) {
-
-            /*
-             * taken from
-             * http://stackoverflow.com/questions/6047996/ignore-self-signed-ssl-cert-using-jersey-client
-             * 
-             * code below disables certificate validation; required for servers running
-             * with self-signed or otherwise untrusted certificates
-             */
-            // Create a trust manager that does not validate certificate chains
-            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-                @Override
-                public X509Certificate[] getAcceptedIssuers() {
-                    return null;
-                }
-
-                @Override
-                public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                }
-
-                @Override
-                public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                }
-
-            }};
-
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        CloseableHttpClient httpClient;
+        if (!validateSSL) {
+            SSLContext sslContext = null;
             try {
-                ctx = SSLContext.getInstance("SSL");
-                ctx.init(null, trustAllCerts, new SecureRandom());
-                HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
-            } catch (NoSuchAlgorithmException | KeyManagementException ex) {
-                Logger.getLogger(RESTMaster.class.getName()).log(Level.SEVERE, null, ex);
+                sslContext = SSLContextBuilder
+                        .create()
+                        .loadTrustMaterial(new TrustSelfSignedStrategy())
+                        .build();
+            } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException ex) {
+                Logger.getLogger(JAXRSRESTAccess.class.getName()).log(Level.SEVERE, null, ex);
             }
 
-            // Create all-trusting host name verifier
-            verifier = new HostnameVerifier() {
-                @Override
-                public boolean verify(String hostname, SSLSession session) {
-                    return true;
-                }
-            };
+            HostnameVerifier allowAllHosts = new NoopHostnameVerifier();
+            SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts);
 
-            // Install the all-trusting host verifier
-            HttpsURLConnection.setDefaultHostnameVerifier(verifier);
-
-            //cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(null, ctx));
+            httpClient = HttpClients
+                    .custom()
+                    .setSSLSocketFactory(connectionFactory)
+                    .build();
+        } else {
+            httpClient = HttpClients.custom().setConnectionManager(cm).build();
         }
+        cm.setMaxTotal(200); // Increase max total connection to 200
+        cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
+        engine = new ApacheHttpClient43Engine(httpClient);
 
-        if (ctx != null && verifier != null) {
+        ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
+                .newBuilder())
+                .httpEngine(engine);
 
-            client = ClientBuilder.newBuilder()
-                    .sslContext(ctx)
-                    .hostnameVerifier(verifier)
+//        for (Class clazz : serializers) {
+//            cb.register(clazz);
+//        }
+        if (!validateSSL) {
+            client = cb
+                    .disableTrustManager()
                     .connectTimeout(10000, TimeUnit.MILLISECONDS)
-                    .readTimeout(30000, TimeUnit.MILLISECONDS)
+                    .readTimeout(100000, TimeUnit.MILLISECONDS)
                     .build();
 
         } else {
-            client = ClientBuilder.newBuilder()
+            client = cb
                     .connectTimeout(10000, TimeUnit.MILLISECONDS)
-                    .readTimeout(30000, TimeUnit.MILLISECONDS)
+                    .readTimeout(100000, TimeUnit.MILLISECONDS)
                     .build();
         }
+
         wt = client.target(gpmsBaseURI);
+
+        wt.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
+        wt.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
     }
 
     @Override
@@ -203,7 +193,7 @@ public class GPMSClient implements GPMSClientI {
             ProjectClassDTOList list = response.readEntity(ProjectClassDTOList.class);
             for (ProjectClassDTO dto : list.getProjectClassList()) {
 
-                ProjectClassI pClass = new ProjectClass(dto.getName(), new HashSet<RoleI>());
+                ProjectClassI pClass = new ProjectClass(dto.getName(), new HashSet<>());
 
                 for (RoleDTO rdto : dto.getRoles().getRoleList()) {
                     RoleI role = new Role(pClass, rdto.getName());
@@ -311,6 +301,10 @@ public class GPMSClient implements GPMSClientI {
 
     @Override
     public synchronized boolean login(String login, String password) throws GPMSException {
+        return login(login, password, 5);
+    }
+
+    private boolean login(String login, String password, int maxAttempts) throws GPMSException {
         if (loggedIn()) {
             throw new GPMSException("Already logged in as " + getUser().getLogin());
 
@@ -319,21 +313,54 @@ public class GPMSClient implements GPMSClientI {
             return false;
         }
 
-        ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
-                .newBuilder());
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        CloseableHttpClient httpClient;
+        if (!validateSSL) {
+            SSLContext sslContext = null;
+            try {
+                sslContext = SSLContextBuilder
+                        .create()
+                        .loadTrustMaterial(new TrustSelfSignedStrategy())
+                        .build();
+            } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException ex) {
+                Logger.getLogger(JAXRSRESTAccess.class.getName()).log(Level.SEVERE, null, ex);
+            }
 
-        if (ctx != null && verifier != null) {
-            client = ClientBuilder.newBuilder()
-                    .sslContext(ctx)
-                    .hostnameVerifier(verifier)
+            HostnameVerifier allowAllHosts = new NoopHostnameVerifier();
+            SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts);
+
+            httpClient = HttpClients
+                    .custom()
+                    .setSSLSocketFactory(connectionFactory)
+                    .build();
+        } else {
+            httpClient = HttpClients.custom().setConnectionManager(cm).build();
+        }
+        cm.setMaxTotal(200); // Increase max total connection to 200
+        cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
+        if (client != null) {
+            client.close();
+        }
+        if (engine != null) {
+            engine.close();
+        }
+        engine = new ApacheHttpClient43Engine(httpClient);
+
+        ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
+                .newBuilder())
+                .httpEngine(engine);
+
+        if (!validateSSL) {
+            client = cb
+                    .disableTrustManager()
                     .connectTimeout(10000, TimeUnit.MILLISECONDS)
-                    .readTimeout(30000, TimeUnit.MILLISECONDS)
+                    .readTimeout(100000, TimeUnit.MILLISECONDS)
                     .build();
 
         } else {
-            client = ClientBuilder.newBuilder()
+            client = cb
                     .connectTimeout(10000, TimeUnit.MILLISECONDS)
-                    .readTimeout(30000, TimeUnit.MILLISECONDS)
+                    .readTimeout(100000, TimeUnit.MILLISECONDS)
                     .build();
         }
 
@@ -359,7 +386,9 @@ public class GPMSClient implements GPMSClientI {
                 if (t instanceof CertificateExpiredException) {
                     throw new GPMSException("Server SSL certificate expired: " + t.getMessage());
                 }
-                return login(login, password);
+                if (maxAttempts > 0) {
+                    return login(login, password, maxAttempts - 1);
+                }
             } else if (che.getCause() != null && che.getCause() instanceof UnknownHostException) {
                 throw new GPMSException("Could not resolve server address. Check your internet connection.");
             }

@@ -49,6 +49,7 @@
                             org.apache.http.ssl,
                             org.apache.http.conn,
                             org.apache.http.conn.socket,
+                            org.apache.http.conn.ssl,
                             org.apache.http.client
                         </Import-Package>
                         <Export-Package>de.cebitec.mgx.restgpms</Export-Package>

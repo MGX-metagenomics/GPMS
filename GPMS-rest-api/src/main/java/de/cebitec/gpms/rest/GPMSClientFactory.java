@@ -24,26 +24,6 @@ public class GPMSClientFactory {
     }
 
     @SuppressWarnings("unchecked")
-    public static GPMSClientI createClient(String serverName, String baseURI) throws GPMSException {
-        if (!OSGiContext.isOSGi()) {
-            // fallback to serviceloader
-            ClientCreatorI fac = GPMSClientFactory.get();
-            if (fac == null) {
-                throw new GPMSException("No ClientCreatorI found.");
-            }
-            return fac.createClient(serverName, baseURI);
-        } else {
-            BundleContext context = FrameworkUtil.getBundle(GPMSClientFactory.class).getBundleContext();
-            ServiceReference<ClientCreatorI> serviceReference = (ServiceReference<ClientCreatorI>) context.getServiceReference(ClientCreatorI.class.getName());
-            if (serviceReference == null) {
-                throw new GPMSException("Unable to obtain service reference for ClientCreatorI.");
-            }
-            ClientCreatorI service = context.<ClientCreatorI>getService(serviceReference);
-            return service.createClient(serverName, baseURI);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
     public static GPMSClientI createClient(String serverName, String baseURI, boolean validateSSL) throws GPMSException {
         if (!OSGiContext.isOSGi()) {
             // fallback to serviceloader
@@ -56,7 +36,7 @@ public class GPMSClientFactory {
             BundleContext context = FrameworkUtil.getBundle(GPMSClientFactory.class).getBundleContext();
             ServiceReference<ClientCreatorI> serviceReference = (ServiceReference<ClientCreatorI>) context.getServiceReference(ClientCreatorI.class.getName());
             ClientCreatorI service = context.<ClientCreatorI>getService(serviceReference);
-            return service.createClient(serverName, baseURI);
+            return service.createClient(serverName, baseURI, validateSSL);
         }
     }
 

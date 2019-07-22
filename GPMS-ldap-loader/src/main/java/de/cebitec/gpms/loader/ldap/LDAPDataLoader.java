@@ -130,7 +130,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         if (ldapPool != null) {
             return;
         }
-        
+
         // setup ldap connection pool
         RoundRobinServerSet serverSet = new RoundRobinServerSet(
                 new String[]{
@@ -354,6 +354,18 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         return ret;
     }
 
+    @Override
+    public MembershipI getService(String projectName, String roleName) throws GPMSException {
+        String projectDN = getProjectDN(projectName);
+        ProjectI project = getProjectByDN(projectDN);
+        for (RoleI role : project.getProjectClass().getRoles()) {
+            if (role.getName().equals(roleName)) {
+                return new Membership(project, role);
+            }
+        }
+        throw new GPMSException("Cannot obtain service access to project " + projectName);
+    }
+
     private Collection<DataSourceI> loadDataSources(String projectDN) throws LDAPException, GPMSException, ExecutionException {
 
         List<DataSourceI> datasources = new ArrayList<>();
@@ -500,7 +512,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         if (pClass == null || pClass.getName() == null || pClass.getName().isEmpty()) {
             throw new GPMSException("Unable to load roles for null/empty project class.");
         }
-        
+
         String cfgFileName = new StringBuilder(config != null ? config.getGPMSConfigDirectory() : "")
                 .append(File.separator).append(pClass.getName().toLowerCase()).append(".conf").toString();
         File cfgFile = new File(cfgFileName);

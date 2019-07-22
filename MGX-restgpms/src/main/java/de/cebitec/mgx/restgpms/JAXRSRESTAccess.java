@@ -51,6 +51,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
     public final static String PROTOBUF_TYPE = "application/x-protobuf";
 
     //private final ClientConfig cc;
+    private final Client client;
     private final ApacheHttpClient43Engine engine;
     private final WebTarget wt;
     private final int numRetriesAllowed = 5;
@@ -83,8 +84,6 @@ public class JAXRSRESTAccess implements RESTAccessI {
         cm.setMaxTotal(200); // Increase max total connection to 200
         cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
         engine = new ApacheHttpClient43Engine(httpClient);
-
-        Client client;
 
         ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
                 .newBuilder())
@@ -356,6 +355,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
 
     @Override
     public void close() throws IOException {
+        client.close();
         engine.close();
     }
 }

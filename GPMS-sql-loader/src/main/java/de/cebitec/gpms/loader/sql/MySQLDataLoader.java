@@ -241,6 +241,17 @@ public class MySQLDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         return ret;
     }
 
+    @Override
+    public MembershipI getService(String projectName, String roleName) throws GPMSException {
+        ProjectI project = getProject(projectName);
+        for (RoleI role : project.getProjectClass().getRoles()) {
+            if (role.getName().equals(roleName)) {
+                return new Membership(project, role);
+            }
+        }
+        throw new GPMSException("Cannot obtain service access to project " + projectName);
+    }
+
     private final static String SQL_LOAD_DATASOURCES_BY_PROJECT = "SELECT Host.hostname AS host, Host.port AS port, "
             + "DBMS_Type.name AS dbmsname, DBMS_Type.version_ AS dbmsver, "
             + "DataSource.name AS dsName, DataSource_Type.name AS dsTypeName, "

@@ -85,6 +85,7 @@
                         <Import-Package>
                             javax.persistence,
                             javax.sql,
+                            org.postgresql.ds,
                             com.zaxxer.hikari,
                             com.google.common.cache,
                             com.google.common.collect,

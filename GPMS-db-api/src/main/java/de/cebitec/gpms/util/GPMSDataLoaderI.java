@@ -34,4 +34,6 @@ public interface GPMSDataLoaderI {
     void setCurrentMaster(MasterI master);
     
     void dispose();
+
+    public MembershipI getService(String projectName, String roleName) throws GPMSException;
 }

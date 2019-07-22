@@ -13,21 +13,13 @@ import java.util.Collection;
  */
 public interface DBGPMSI {
 
-//    public Set<ProjectClassI> getProjectClasses();
-//
     public Collection<ProjectClassI> getSupportedProjectClasses();
 
-//    public void registerEMFResolver(EMFNameResolver resolver);
-//
-//    public void unregisterEMFResolver(EMFNameResolver resolver);
-
-//    public void registerProjectClass(String pc);
-//
-//    public void unregisterProjectClass(String pc);
-    
     public MembershipI getService(String projectName, String roleName) throws GPMSException;
 
     public <T extends MasterI> void createMaster(MembershipI m, Class<T> targetClass);
+
+    public <T extends MasterI> void createServiceMaster(MembershipI m, Class<T> targetClass);
 
     public <T extends MasterI> T getCurrentMaster();
 

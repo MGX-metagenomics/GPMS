@@ -1,5 +1,6 @@
 package de.cebitec.gpms.data;
 
+import de.cebitec.gpms.core.GPMSException;
 import de.cebitec.gpms.core.MasterI;
 import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
@@ -23,6 +24,8 @@ public interface DBGPMSI {
 //    public void registerProjectClass(String pc);
 //
 //    public void unregisterProjectClass(String pc);
+    
+    public MembershipI getService(String projectName, String roleName) throws GPMSException;
 
     public <T extends MasterI> void createMaster(MembershipI m, Class<T> targetClass);
 

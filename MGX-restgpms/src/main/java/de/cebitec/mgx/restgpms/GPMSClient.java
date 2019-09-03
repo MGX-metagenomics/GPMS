@@ -247,7 +247,7 @@ public class GPMSClient implements GPMSClientI {
                     }
 
                     // create an artificial datasource based on the base URI for the app server
-                    String projectBaseURI = projectDTO.hasBaseURI() && !projectDTO.getBaseURI().isEmpty()
+                    String projectBaseURI = !projectDTO.getBaseURI().isEmpty()
                             ? projectDTO.getBaseURI()
                             : gpmsBaseURI + projectDTO.getName();
                     URI dsURI;

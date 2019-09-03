@@ -1,3 +1,4 @@
+syntax = "proto3";
 package DTO;
 
 option java_package = "de.cebitec.gpms.dto";
@@ -7,15 +8,15 @@ option optimize_for = SPEED;
 // GPMS
 
 message GPMSString {
-  required string value = 1;
+  string value = 1;
 }
 
 message GPMSLong {
-  required uint64 value = 1;
+  uint64 value = 1;
 }
 
 message RoleDTO {
-  required string name = 1;
+  string name = 1;
 }
 
 message RoleDTOList {
@@ -23,8 +24,8 @@ message RoleDTOList {
 }
 
 message ProjectClassDTO {
-  required string name = 1;
-  required RoleDTOList roles = 2;
+  string name = 1;
+  RoleDTOList roles = 2;
 }
 
 message ProjectClassDTOList {
@@ -32,9 +33,9 @@ message ProjectClassDTOList {
 }
 
 message ProjectDTO {
-  required string name = 1;
-  required ProjectClassDTO project_class = 2;
-  optional string baseURI = 3;
+  string name = 1;
+  ProjectClassDTO project_class = 2;
+  string baseURI = 3;
 }
 
 message ProjectDTOList {
@@ -42,8 +43,8 @@ message ProjectDTOList {
 }
 
 message MembershipDTO {
-  required ProjectDTO project = 1;
-  required RoleDTO role = 2;
+  ProjectDTO project = 1;
+  RoleDTO role = 2;
 }
 
 message MembershipDTOList {
@@ -51,17 +52,17 @@ message MembershipDTOList {
 }
 
 message DataSourceTypeDTO {
-  required string name = 1;
+  string name = 1;
 }
 
 message DataSourceDTO {
-  required DataSourceTypeDTO type = 1;
-  required string name = 2;
+  DataSourceTypeDTO type = 1;
+  string name = 2;
 }
 
 message DataSource_ASDTO {
-  required DataSourceDTO parent = 1;
-  required string URL = 2;
+  DataSourceDTO parent = 1;
+  string URL = 2;
 }
 
 message DataSourceDTOList {

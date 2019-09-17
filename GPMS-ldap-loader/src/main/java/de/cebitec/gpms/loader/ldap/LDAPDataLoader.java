@@ -290,6 +290,11 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
     }
 
     private String getProjectDN(String projName) throws GPMSException {
+
+        if (projName == null || projName.isEmpty()) {
+            throw new GPMSException("Unable to handle null or empty project name.");
+        }
+
         LDAPConnection conn = null;
         String projectDN = null;
 
@@ -317,12 +322,22 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 
     @Override
     public ProjectI getProject(String projectName) throws GPMSException {
+
+        if (projectName == null || projectName.isEmpty()) {
+            throw new GPMSException("Unable to handle null or empty project name.");
+        }
+
         String projectDN = getProjectDN(projectName);
         return getProjectByDN(projectDN);
 
     }
 
     public ProjectI getProjectByDN(String projectDN) throws GPMSException {
+
+        if (projectDN == null || projectDN.isEmpty()) {
+            throw new GPMSException("Unable to handle null or empty project DN.");
+        }
+
         ProjectI project = null;
         LDAPConnection conn = null;
 

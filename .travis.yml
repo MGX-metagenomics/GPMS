@@ -23,7 +23,7 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq protobuf-compiler
   - git clone https://github.com/MGX-metagenomics/utilities.git
-  - cd utilities && mvn clean install -DskipTests=true && cd .. && rm -rf utilities
+  - cd utilities && mvn -q clean install -DskipTests=true && cd .. && rm -rf utilities
 
 script:
   - mvn clean install

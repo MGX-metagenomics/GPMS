@@ -23,46 +23,37 @@ import java.util.Set;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Assume;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.Configuration;
-import static org.ops4j.pax.exam.CoreOptions.bundle;
-import static org.ops4j.pax.exam.CoreOptions.junitBundles;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
-import static org.ops4j.pax.exam.CoreOptions.options;
-import static org.ops4j.pax.exam.CoreOptions.systemProperty;
-import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.junit.PaxExam;
 
 /**
  *
  * @author sj
  */
-@RunWith(PaxExam.class)
 public class GPMSTest {
 
-    @Configuration
-    public static Option[] configuration() {
-        return options(
-                //bootDelegationPackage("javax.annotation"),
-                junitBundles(),
-                mavenBundle("javax.validation", "validation-api", "2.0.1.Final"),
-                mavenBundle("javax.annotation", "javax.annotation-api", "1.3.2"),
-                mavenBundle("com.sun.activation", "javax.activation", "1.2.0"),
-                mavenBundle("javax.xml.bind", "jaxb-api", "2.3.0"),
-                mavenBundle("com.sun.xml.bind", "jaxb-core", "2.3.0"),
-                mavenBundle().groupId("de.cebitec.mgx").artifactId("RESTEasy-OSGi").version("2.0"),
-                mavenBundle().groupId("org.javassist").artifactId("javassist").version("3.22.0-CR2"),
-                mavenBundle().groupId("org.jboss.spec.javax.ws.rs").artifactId("jboss-jaxrs-api_2.1_spec").version("1.0.2.Final"),
-                mavenBundle().groupId("com.google.protobuf").artifactId("protobuf-java").version("3.7.1"),
-                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-DTO").version("2.0"),
-                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-core-api").version("2.0"),
-                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-rest-api").version("2.0"),
-                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-model").version("2.0"),
-                mavenBundle().groupId("de.cebitec.mgx").artifactId("ProtoBuf-Serializer").version("2.0"),
-                systemProperty("org.ops4j.pax.logging.DefaultServiceLog.level").value("WARN"),
-                bundle("reference:file:target/classes")
-        );
-    }
+//    @Configuration
+//    public static Option[] configuration() {
+//        return options(
+//                //bootDelegationPackage("javax.annotation"),
+//                junitBundles(),
+//                mavenBundle("javax.validation", "validation-api", "2.0.1.Final"),
+//                mavenBundle("javax.annotation", "javax.annotation-api", "1.3.2"),
+//                mavenBundle("com.sun.activation", "javax.activation", "1.2.0"),
+//                mavenBundle("javax.xml.bind", "jaxb-api", "2.3.0"),
+//                mavenBundle("com.sun.xml.bind", "jaxb-core", "2.3.0"),
+//                mavenBundle("com.sun.xml.bind", "jaxb-impl", "2.3.0"),
+//                mavenBundle().groupId("de.cebitec.mgx").artifactId("RESTEasy-OSGi").version("2.0"),
+//                mavenBundle().groupId("org.javassist").artifactId("javassist").version("3.22.0-CR2"),
+//                mavenBundle().groupId("org.jboss.spec.javax.ws.rs").artifactId("jboss-jaxrs-api_2.1_spec").version("1.0.2.Final"),
+//                mavenBundle().groupId("com.google.protobuf").artifactId("protobuf-java").version("3.11.0"),
+//                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-DTO").version("2.0"),
+//                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-core-api").version("2.0"),
+//                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-rest-api").version("2.0"),
+//                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-model").version("2.0"),
+//                mavenBundle().groupId("de.cebitec.mgx").artifactId("ProtoBuf-Serializer").version("2.0"),
+//                systemProperty("org.ops4j.pax.logging.DefaultServiceLog.level").value("WARN"),
+//                bundle("reference:file:target/classes")
+//        );
+//    }
 
     @Test
     public void getProjectClassesLoggedOut() {

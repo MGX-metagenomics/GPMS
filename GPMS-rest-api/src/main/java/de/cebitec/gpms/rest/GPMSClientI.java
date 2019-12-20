@@ -1,6 +1,7 @@
 package de.cebitec.gpms.rest;
 
 import de.cebitec.gpms.core.GPMSException;
+import de.cebitec.gpms.core.GPMSMessageI;
 import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
 import de.cebitec.gpms.core.UserI;
@@ -22,6 +23,8 @@ public interface GPMSClientI {
     public String getServerName();
     
     public boolean validateSSL();
+    
+    public Iterator<GPMSMessageI> getMessages() throws GPMSException;
 
     public Iterator<ProjectClassI> getProjectClasses() throws GPMSException;
 

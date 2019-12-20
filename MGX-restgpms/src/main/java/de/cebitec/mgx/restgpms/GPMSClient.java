@@ -4,12 +4,15 @@ import de.cebitec.gpms.core.DataSourceI;
 import de.cebitec.gpms.core.DataSourceTypeI;
 import de.cebitec.gpms.core.DataSource_ApplicationServerI;
 import de.cebitec.gpms.core.GPMSException;
+import de.cebitec.gpms.core.GPMSMessageI;
 import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
 import de.cebitec.gpms.core.ProjectI;
 import de.cebitec.gpms.core.RoleI;
 import de.cebitec.gpms.core.UserI;
 import de.cebitec.gpms.dto.impl.GPMSLong;
+import de.cebitec.gpms.dto.impl.GPMSMessageDTO;
+import de.cebitec.gpms.dto.impl.GPMSMessageDTOList;
 import de.cebitec.gpms.dto.impl.GPMSString;
 import de.cebitec.gpms.dto.impl.MembershipDTO;
 import de.cebitec.gpms.dto.impl.MembershipDTOList;
@@ -18,6 +21,7 @@ import de.cebitec.gpms.dto.impl.ProjectClassDTOList;
 import de.cebitec.gpms.dto.impl.ProjectDTO;
 import de.cebitec.gpms.dto.impl.RoleDTO;
 import de.cebitec.gpms.model.GPMSDataSourceAppServer;
+import de.cebitec.gpms.model.GPMSMessage;
 import de.cebitec.gpms.model.Membership;
 import de.cebitec.gpms.model.Project;
 import de.cebitec.gpms.model.ProjectClass;
@@ -38,6 +42,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateExpiredException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -183,6 +189,25 @@ public class GPMSClient implements GPMSClientI {
     }
 
     @Override
+    public Iterator<GPMSMessageI> getMessages() throws GPMSException {
+        if (!loggedIn()) {
+            throw new GPMSException("Not logged in.");
+        }
+        List<GPMSMessageI> ret = new ArrayList<>();
+        Response response = getResource("GPMS", "GPMSBean", "getMessages").get(Response.class);
+        if (Status.fromStatusCode(response.getStatus()) == Status.OK) {
+            GPMSMessageDTOList list = response.readEntity(GPMSMessageDTOList.class);
+            for (GPMSMessageDTO dto : list.getMessageList()) {
+                Date date = new Date(1000L * dto.getDate());
+                GPMSMessageI msg = new GPMSMessage(date, dto.getMessage());
+                ret.add(msg);
+            }
+        }
+        Collections.sort(ret);
+        return ret.iterator();
+    }
+
+    @Override
     public Iterator<ProjectClassI> getProjectClasses() throws GPMSException {
         if (!loggedIn()) {
             throw new GPMSException("Not logged in.");
@@ -239,7 +264,7 @@ public class GPMSClient implements GPMSClientI {
                 for (MembershipDTO mdto : list.getMembershipList()) {
 
                     ProjectDTO projectDTO = mdto.getProject();
-                    ProjectClassI pclass = new ProjectClass(projectDTO.getProjectClass().getName(), new HashSet<RoleI>());
+                    ProjectClassI pclass = new ProjectClass(projectDTO.getProjectClass().getName(), new HashSet<>());
 
                     for (RoleDTO rdto : mdto.getProject().getProjectClass().getRoles().getRoleList()) {
                         RoleI role = new Role(pclass, rdto.getName());

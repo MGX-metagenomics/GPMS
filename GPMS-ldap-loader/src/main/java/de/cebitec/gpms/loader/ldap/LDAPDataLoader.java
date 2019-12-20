@@ -220,7 +220,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                 return ret;
             }
         }
-        
+
         File[] listFiles = newsDirectory.listFiles();
         if (listFiles == null || listFiles.length == 0) {
             return ret;
@@ -238,7 +238,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                     GPMSMessage g = new GPMSMessage(new Date(f.lastModified() / 1000L), sb.toString());
                     ret.add(g);
                 } catch (IOException ex) {
-                    Logger.getLogger(LDAPDataLoader.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
                 }
             }
         }

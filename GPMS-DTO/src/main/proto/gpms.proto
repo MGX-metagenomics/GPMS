@@ -68,3 +68,12 @@ message DataSource_ASDTO {
 message DataSourceDTOList {
   repeated DataSourceDTO datasource = 1;
 }
+
+message GPMSMessageDTO {
+  uint64 date = 1;
+  string message = 2;
+}
+
+message GPMSMessageDTOList {
+  repeated GPMSMessageDTO message = 1;
+}

@@ -6,12 +6,14 @@
 package de.cebitec.gpms.util;
 
 import de.cebitec.gpms.core.GPMSException;
+import de.cebitec.gpms.core.GPMSMessageI;
 import de.cebitec.gpms.core.MasterI;
 import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
 import de.cebitec.gpms.core.ProjectI;
 import de.cebitec.gpms.core.RoleI;
 import java.util.Collection;
+import java.util.List;
 
 /**
  *
@@ -36,4 +38,6 @@ public interface GPMSDataLoaderI {
     void dispose();
 
     public MembershipI getService(String projectName, String roleName) throws GPMSException;
+
+    public List<GPMSMessageI> getMessages();
 }

@@ -21,6 +21,7 @@ import de.cebitec.gpms.core.DataSourceTypeI;
 import de.cebitec.gpms.core.DataSource_ApplicationServerI;
 import de.cebitec.gpms.core.DataSource_DBI;
 import de.cebitec.gpms.core.GPMSException;
+import de.cebitec.gpms.core.GPMSMessageI;
 import de.cebitec.gpms.core.HostI;
 import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
@@ -35,6 +36,7 @@ import de.cebitec.gpms.model.DataSourceType;
 import de.cebitec.gpms.model.GPMSDataSourceAppServer;
 import de.cebitec.gpms.model.GPMSDataSourceDB;
 import de.cebitec.gpms.model.GPMSHost;
+import de.cebitec.gpms.model.GPMSMessage;
 import de.cebitec.gpms.model.Membership;
 import de.cebitec.gpms.model.Project;
 import de.cebitec.gpms.model.ProjectClass;
@@ -49,6 +51,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -141,6 +144,8 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         try {
             BindRequest breq = new SimpleBindRequest("cn=gpms_access," + baseDN, "gpms");
             ldapPool = new LDAPConnectionPool(serverSet, breq, 10); // unauthenticated connection
+            ldapPool.setMaxWaitTimeMillis(5000);
+            ldapPool.setMaxConnectionAgeMillis(10000);
         } catch (LDAPException ex) {
             Logger.getLogger(LDAPDataLoader.class.getName()).log(Level.SEVERE, null, ex);
             return;
@@ -203,6 +208,41 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
             ldapPool = null;
         }
         super.dispose();
+    }
+
+    @Override
+    public List<GPMSMessageI> getMessages() {
+        List<GPMSMessageI> ret = new ArrayList<>();
+        File newsDirectory = new File(new File(config.getGPMSConfigDirectory()), "NEWS");
+        if (!newsDirectory.exists()) {
+            if (!newsDirectory.mkdirs()) {
+                Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Cannot create NEWS directory!");
+                return ret;
+            }
+        }
+        
+        File[] listFiles = newsDirectory.listFiles();
+        if (listFiles == null || listFiles.length == 0) {
+            return ret;
+        }
+
+        for (File f : listFiles) {
+            if (f.isFile() && f.canRead()) {
+                try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line);
+                        sb.append(System.lineSeparator());
+                    }
+                    GPMSMessage g = new GPMSMessage(new Date(f.lastModified() / 1000L), sb.toString());
+                    ret.add(g);
+                } catch (IOException ex) {
+                    Logger.getLogger(LDAPDataLoader.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+        return ret;
     }
 
     @Override

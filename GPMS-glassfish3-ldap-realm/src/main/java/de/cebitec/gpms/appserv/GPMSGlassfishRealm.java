@@ -46,7 +46,7 @@ public class GPMSGlassfishRealm extends AppservRealm {
     public static final String AUTH_TYPE = "gpms";
     //
     public static final String PARAM_DIRURL = "directory";
-    public static final String PARAM_USERDN = "base-dn";
+    public static final String PARAM_BASEDN = "base-dn";
     public static final String PARAM_SEARCH_FILTER = "search-filter";
     public static final String PARAM_POOLSIZE = "pool-size";
     //
@@ -60,7 +60,7 @@ public class GPMSGlassfishRealm extends AppservRealm {
 
         String jaasCtx = props.getProperty(AppservRealm.JAAS_CONTEXT_PARAM);
         String directory = props.getProperty(PARAM_DIRURL);
-        String basedn = props.getProperty(PARAM_USERDN);
+        String basedn = props.getProperty(PARAM_BASEDN);
         String filter = props.getProperty(PARAM_SEARCH_FILTER);
         String poolSize = props.getProperty(PARAM_POOLSIZE);
 
@@ -82,7 +82,7 @@ public class GPMSGlassfishRealm extends AppservRealm {
             throw new BadRealmException(msg);
         }
         if (basedn == null) {
-            String msg = sm.getString("realm.missingprop", PARAM_USERDN, "GPMSRealm");
+            String msg = sm.getString("realm.missingprop", PARAM_BASEDN, "GPMSRealm");
             throw new BadRealmException(msg);
         }
         if (filter == null) {
@@ -104,7 +104,7 @@ public class GPMSGlassfishRealm extends AppservRealm {
 
         this.setProperty(AppservRealm.JAAS_CONTEXT_PARAM, jaasCtx);
         this.setProperty(PARAM_DIRURL, directory);
-        this.setProperty(PARAM_USERDN, basedn);
+        this.setProperty(PARAM_BASEDN, basedn);
         this.setProperty(PARAM_SEARCH_FILTER, filter);
         this.setProperty(PARAM_POOLSIZE, poolSize);
 
@@ -229,7 +229,7 @@ public class GPMSGlassfishRealm extends AppservRealm {
         String userDN;
         try {
             Filter userFilter = Filter.create(filter);
-            ReadOnlySearchRequest userReq = new SearchRequest(this.getProperty(PARAM_USERDN), SearchScope.SUB, userFilter, "dn");
+            ReadOnlySearchRequest userReq = new SearchRequest(this.getProperty(PARAM_BASEDN), SearchScope.SUB, userFilter, "dn");
             final SearchResult userResult = ldapPool.search(userReq);
             if (userResult.getEntryCount() == 0) {
                 return false; // invalid login

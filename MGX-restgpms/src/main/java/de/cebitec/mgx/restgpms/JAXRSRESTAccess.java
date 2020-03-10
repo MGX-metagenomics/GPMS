@@ -82,7 +82,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
             httpClient = HttpClients.custom().setConnectionManager(cm).build();
         }
         cm.setMaxTotal(200); // Increase max total connection to 200
-        cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
+        cm.setDefaultMaxPerRoute(30); // Increase default max connection per route to 20
         engine = new ApacheHttpClient43Engine(httpClient);
 
         ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
@@ -93,20 +93,14 @@ public class JAXRSRESTAccess implements RESTAccessI {
             cb.register(clazz);
         }
 
-        if (!verifySSL) {
-            client = cb
-                    .disableTrustManager()
-                    .connectTimeout(10000, TimeUnit.MILLISECONDS)
-                    .readTimeout(100000, TimeUnit.MILLISECONDS)
-                    .build();
+        cb.connectTimeout(10000, TimeUnit.MILLISECONDS);
+        cb.readTimeout(100000, TimeUnit.MILLISECONDS);
 
-        } else {
-            client = cb
-                    .connectTimeout(10000, TimeUnit.MILLISECONDS)
-                    .readTimeout(100000, TimeUnit.MILLISECONDS)
-                    .build();
+        if (!verifySSL) {
+            cb.disableTrustManager();
         }
 
+        client = cb.build();
         wt = client.target(appServerURI);
 
         if (user != null) {
@@ -298,6 +292,13 @@ public class JAXRSRESTAccess implements RESTAccessI {
             }
         }
     }
+
+//    @Override
+//    public final AsyncRequestHandleI postAsync(Object obj, final String... path) {
+//        Invocation.Builder buildPath = buildPath(path);
+//        Future<Response> res = buildPath.async().post(Entity.entity(obj, PROTOBUF_TYPE));
+//        return new AsyncRequestHandle(res);
+//    }
 
     @Override
     public <U> U post(Object obj, Class<U> targetClass, String... path) throws RESTException {

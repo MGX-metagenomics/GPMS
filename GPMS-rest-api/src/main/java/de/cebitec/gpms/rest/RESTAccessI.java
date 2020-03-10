@@ -7,7 +7,6 @@ package de.cebitec.gpms.rest;
 
 import java.io.Closeable;
 
-
 /**
  *
  * @author sjaenick
@@ -26,10 +25,12 @@ public interface RESTAccessI extends Closeable {
 
     public <U> U post(Object obj, Class<U> targetClass, final String... path) throws RESTException;
 
+//    public AsyncRequestHandleI postAsync(Object obj, final String... path);
+
     public void delete(final String... path) throws RESTException;
 
     public <U> U delete(Class<U> targetClass, final String... path) throws RESTException;
-    
+
     public void addFilter(Object filter);
 
 }

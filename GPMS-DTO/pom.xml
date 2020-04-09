@@ -40,7 +40,7 @@
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <version>0.6.1</version>
                 <configuration>
-                    <protocExecutable>/usr/local/bin/protoc-3</protocExecutable>
+                    <protocExecutable>protoc-3</protocExecutable>
                 </configuration>
                 <executions>
                     <execution>

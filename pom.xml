@@ -13,6 +13,10 @@
         <maven>3.5.0</maven>
     </prerequisites> 
     
+    <scm>
+        <url>https://github.com/mgx-metagenomics/gpms</url>
+    </scm>
+    
     <build>
         <plugins>   
             <plugin>
@@ -72,4 +76,13 @@
             </snapshots>
         </repository>
     </repositories>
+    
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub mgx-metagenomics Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/mgx-metagenomics/gpms</url>
+        </repository>
+    </distributionManagement>
+    
 </project>

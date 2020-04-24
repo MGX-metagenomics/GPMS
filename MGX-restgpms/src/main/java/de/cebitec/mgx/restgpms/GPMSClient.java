@@ -152,6 +152,7 @@ public class GPMSClient implements GPMSClientI {
 
             httpClient = HttpClients
                     .custom()
+                    .setConnectionManager(cm)
                     .setSSLSocketFactory(connectionFactory)
                     .build();
         } else {
@@ -470,6 +471,9 @@ public class GPMSClient implements GPMSClientI {
             pcs.firePropertyChange(PROP_LOGGEDIN, true, false);
             // after the property chance has been processed,
             // release resources
+            client.close();
+            engine.close();
+            engine = null;
             client = null;
             user = null;
         }

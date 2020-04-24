@@ -18,6 +18,7 @@ public class GPMSSimpleMaster implements MasterI {
 
     private final MembershipI membership;
     private UserI user;
+    private volatile boolean closed = false;
 
     public GPMSSimpleMaster(MembershipI m) {
         this.membership = m;
@@ -25,7 +26,7 @@ public class GPMSSimpleMaster implements MasterI {
 
     @Override
     public void close() {
-        // nop
+        closed = true;
     }
 
     @Override

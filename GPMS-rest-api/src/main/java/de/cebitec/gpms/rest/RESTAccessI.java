@@ -32,5 +32,7 @@ public interface RESTAccessI extends Closeable {
     public <U> U delete(Class<U> targetClass, final String... path) throws RESTException;
 
     public void addFilter(Object filter);
+    
+    public boolean isClosed();
 
 }

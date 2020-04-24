@@ -8,6 +8,7 @@ package de.cebitec.mgx.restgpms;
 import de.cebitec.gpms.rest.RESTException;
 import de.cebitec.gpms.core.UserI;
 import de.cebitec.gpms.rest.RESTAccessI;
+import de.cebitec.gpms.rest.RESTDisconnectedException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,14 +51,13 @@ public class JAXRSRESTAccess implements RESTAccessI {
 
     public final static String PROTOBUF_TYPE = "application/x-protobuf";
 
-    //private final ClientConfig cc;
     private final Client client;
     private final ApacheHttpClient43Engine engine;
     private final WebTarget wt;
     private final int numRetriesAllowed = 5;
+    private volatile boolean closed = false;
 
     public JAXRSRESTAccess(UserI user, URI appServerURI, boolean verifySSL, Class... serializers) {
-
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
         CloseableHttpClient httpClient;
         if (!verifySSL) {
@@ -76,6 +76,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
 
             httpClient = HttpClients
                     .custom()
+                    .setConnectionManager(cm)
                     .setSSLSocketFactory(connectionFactory)
                     .build();
         } else {
@@ -132,10 +133,13 @@ public class JAXRSRESTAccess implements RESTAccessI {
     }
 
     private <U> U put(Object obj, Class<U> c, Invocation.Builder buildPath, int numRetries) throws RESTException {
-        try (Response res = buildPath.put(Entity.entity(obj, PROTOBUF_TYPE))) {
+        try ( Response res = buildPath.put(Entity.entity(obj, PROTOBUF_TYPE))) {
             catchException(res);
             return res.readEntity(c);
-        } catch (ProcessingException ex) {
+        } catch (IllegalStateException | ProcessingException ex) {
+            if (closed) {
+                throw new RESTDisconnectedException();
+            }
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -156,9 +160,12 @@ public class JAXRSRESTAccess implements RESTAccessI {
     }
 
     private void put(Object obj, Invocation.Builder buildPath, int numRetries) throws RESTException {
-        try (Response res = buildPath.put(Entity.entity(obj, PROTOBUF_TYPE))) {
+        try ( Response res = buildPath.put(Entity.entity(obj, PROTOBUF_TYPE))) {
             catchException(res);
-        } catch (ProcessingException ex) {
+        } catch (IllegalStateException | ProcessingException ex) {
+            if (closed) {
+                throw new RESTDisconnectedException();
+            }
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -181,9 +188,12 @@ public class JAXRSRESTAccess implements RESTAccessI {
     }
 
     private void get(Invocation.Builder buildPath, int numRetries) throws RESTException {
-        try (Response res = buildPath.get(Response.class)) {
+        try ( Response res = buildPath.get(Response.class)) {
             catchException(res);
-        } catch (ProcessingException ex) {
+        } catch (IllegalStateException | ProcessingException ex) {
+            if (closed) {
+                throw new RESTDisconnectedException();
+            }
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -204,10 +214,13 @@ public class JAXRSRESTAccess implements RESTAccessI {
     }
 
     private <U> U get(Class<U> c, Invocation.Builder buildPath, int numRetries) throws RESTException {
-        try (Response res = buildPath.get(Response.class)) {
+        try ( Response res = buildPath.get(Response.class)) {
             catchException(res);
             return res.readEntity(c);
-        } catch (ProcessingException ex) {
+        } catch (IllegalStateException | ProcessingException ex) {
+            if (closed) {
+                throw new RESTDisconnectedException();
+            }
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -229,10 +242,13 @@ public class JAXRSRESTAccess implements RESTAccessI {
     }
 
     private <U> U delete(Class<U> clazz, Invocation.Builder buildPath, int numRetries) throws RESTException {
-        try (Response res = buildPath.delete(Response.class)) {
+        try ( Response res = buildPath.delete(Response.class)) {
             catchException(res);
             return res.readEntity(clazz);
-        } catch (ProcessingException ex) {
+        } catch (IllegalStateException | ProcessingException ex) {
+            if (closed) {
+                throw new RESTDisconnectedException();
+            }
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -254,9 +270,12 @@ public class JAXRSRESTAccess implements RESTAccessI {
     }
 
     private void delete(Invocation.Builder buildPath, int numRetries) throws RESTException {
-        try (Response res = buildPath.delete(Response.class)) {
+        try ( Response res = buildPath.delete(Response.class)) {
             catchException(res);
-        } catch (ProcessingException ex) {
+        } catch (IllegalStateException | ProcessingException ex) {
+            if (closed) {
+                throw new RESTDisconnectedException();
+            }
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -277,9 +296,12 @@ public class JAXRSRESTAccess implements RESTAccessI {
     }
 
     private void post(Object obj, Invocation.Builder buildPath, int numRetries) throws RESTException {
-        try (Response res = buildPath.post(Entity.entity(obj, PROTOBUF_TYPE))) {
+        try ( Response res = buildPath.post(Entity.entity(obj, PROTOBUF_TYPE))) {
             catchException(res);
-        } catch (ProcessingException ex) {
+        } catch (IllegalStateException | ProcessingException ex) {
+            if (closed) {
+                throw new RESTDisconnectedException();
+            }
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -299,7 +321,6 @@ public class JAXRSRESTAccess implements RESTAccessI {
 //        Future<Response> res = buildPath.async().post(Entity.entity(obj, PROTOBUF_TYPE));
 //        return new AsyncRequestHandle(res);
 //    }
-
     @Override
     public <U> U post(Object obj, Class<U> targetClass, String... path) throws RESTException {
         Invocation.Builder buildPath = buildPath(path);
@@ -307,10 +328,13 @@ public class JAXRSRESTAccess implements RESTAccessI {
     }
 
     private <U> U post(Object obj, Class<U> targetClass, Invocation.Builder buildPath, int numRetries) throws RESTException {
-        try (Response res = buildPath.post(Entity.entity(obj, PROTOBUF_TYPE))) {
+        try ( Response res = buildPath.post(Entity.entity(obj, PROTOBUF_TYPE))) {
             catchException(res);
             return res.readEntity(targetClass);
-        } catch (ProcessingException ex) {
+        } catch (IllegalStateException | ProcessingException ex) {
+            if (closed) {
+                throw new RESTDisconnectedException();
+            }
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 if (numRetries == 0) {
                     throw ex;
@@ -324,8 +348,13 @@ public class JAXRSRESTAccess implements RESTAccessI {
         }
     }
 
-    private Invocation.Builder buildPath(String... pathComponents) {
-        WebTarget wr = wt; //client.target(resource);
+    private Invocation.Builder buildPath(String... pathComponents) throws RESTException {
+        WebTarget wr = wt;
+
+        if (closed) {
+            throw new RESTDisconnectedException();
+        }
+
         try {
             for (String s : pathComponents) {
                 wr = wr.path(URLEncoder.encode(s, "UTF-8"));
@@ -333,6 +362,12 @@ public class JAXRSRESTAccess implements RESTAccessI {
             //System.err.println(wr.getURI().toASCIIString());
 
             return wr.request(PROTOBUF_TYPE).accept(PROTOBUF_TYPE);
+        } catch (IllegalStateException ise) {
+            // recheck if close happened
+            if (closed || ise.getMessage().contains("Client is closed.")) {
+                throw new RESTDisconnectedException();
+            }
+            throw ise; //rethrow
         } catch (UnsupportedEncodingException ex) {
             throw new RuntimeException(ex);
         }
@@ -341,7 +376,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
     private void catchException(final Response res) throws RESTException {
         if (Response.Status.fromStatusCode(res.getStatus()) != Response.Status.OK) {
             StringBuilder msg = new StringBuilder();
-            try (BufferedReader r = new BufferedReader(new InputStreamReader(res.readEntity(InputStream.class)))) {
+            try ( BufferedReader r = new BufferedReader(new InputStreamReader(res.readEntity(InputStream.class)))) {
                 String buf;
                 while ((buf = r.readLine()) != null) {
                     msg.append(buf);
@@ -355,8 +390,16 @@ public class JAXRSRESTAccess implements RESTAccessI {
     }
 
     @Override
+    public boolean isClosed() {
+        return closed;
+    }
+
+    @Override
     public void close() throws IOException {
-        client.close();
-        engine.close();
+        if (!closed) {
+            closed = true;
+            client.close();
+            engine.close();
+        }
     }
 }

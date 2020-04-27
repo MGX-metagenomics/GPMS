@@ -2,6 +2,7 @@ package de.cebitec.gpms.loader.ldap;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.unboundid.ldap.sdk.BindRequest;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
@@ -12,6 +13,7 @@ import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
+import com.unboundid.ldap.sdk.SimpleBindRequest;
 import de.cebitec.gpms.core.DBAPITypeI;
 import de.cebitec.gpms.core.DBMSTypeI;
 import de.cebitec.gpms.core.DataSourceI;
@@ -133,12 +135,14 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         RoundRobinServerSet serverSet = new RoundRobinServerSet(
                 new String[]{
                     //                    "localhost"//,
-                    "jim.computational.bio.uni-giessen.de",
-                    "lukas.computational.bio.uni-giessen.de"
-                }, new int[]{389, 389}
+                    "infra.internal.computational.bio.uni-giessen.de"
+                }, new int[]{389}
         );
         try {
-            ldapPool = new LDAPConnectionPool(serverSet, null, 10); // unauthenticated connection
+            BindRequest breq = new SimpleBindRequest("cn=gpms_access," + baseDN, "gpms");
+            ldapPool = new LDAPConnectionPool(serverSet, breq, 10); // unauthenticated connection
+            ldapPool.setMaxWaitTimeMillis(5000);
+            ldapPool.setMaxConnectionAgeMillis(10000);
         } catch (LDAPException ex) {
             Logger.getLogger(LDAPDataLoader.class.getName()).log(Level.SEVERE, null, ex);
             return;

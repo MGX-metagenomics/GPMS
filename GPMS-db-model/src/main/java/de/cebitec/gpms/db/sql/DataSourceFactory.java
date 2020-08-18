@@ -29,7 +29,7 @@ public class DataSourceFactory {
         HikariConfig cfg = new HikariConfig();
         cfg.setPoolName(poolname);
         //cfg.setMinimumPoolSize(5);
-        cfg.setMaximumPoolSize(25);
+        cfg.setMaximumPoolSize(50);
         cfg.setMinimumIdle(2);
         cfg.setDataSourceClassName("org.postgresql.ds.PGSimpleDataSource");
         cfg.addDataSourceProperty("user", dbUser);
@@ -37,7 +37,7 @@ public class DataSourceFactory {
         cfg.addDataSourceProperty("serverName", projectGPMSDS.getHost().getHostName());
         cfg.addDataSourceProperty("portNumber", projectGPMSDS.getHost().getPort());
         cfg.addDataSourceProperty("databaseName", projectGPMSDS.getName());
-        cfg.setConnectionTimeout(1500); // ms
+        cfg.setConnectionTimeout(1000 * 20); // ms
         cfg.setMaxLifetime(1000 * 60 * 2);  // 2 mins
         cfg.setIdleTimeout(1000 * 60);
         cfg.setLeakDetectionThreshold(60000); // 60 sec before in-use connection is considered leaked

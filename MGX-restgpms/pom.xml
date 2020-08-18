@@ -50,7 +50,9 @@
                             org.apache.http.conn,
                             org.apache.http.conn.socket,
                             org.apache.http.conn.ssl,
-                            org.apache.http.client
+                            org.apache.http.client,
+                            org.apache.http.config,
+                            org.apache.http.client.config
                         </Import-Package>
                         <Export-Package>de.cebitec.mgx.restgpms</Export-Package>
                         <Bundle-Activator>de.cebitec.mgx.restgpms.Activator</Bundle-Activator>

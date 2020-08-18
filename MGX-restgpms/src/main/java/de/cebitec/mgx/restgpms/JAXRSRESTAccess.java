@@ -14,11 +14,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedActionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,6 +34,8 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
@@ -58,7 +62,20 @@ public class JAXRSRESTAccess implements RESTAccessI {
     private volatile boolean closed = false;
 
     public JAXRSRESTAccess(UserI user, URI appServerURI, boolean verifySSL, Class... serializers) {
+
+        SocketConfig socketConfig = SocketConfig.custom()
+                .setTcpNoDelay(true)
+                .build();
+
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        cm.setDefaultSocketConfig(socketConfig);
+
+        RequestConfig defaultRequestConfig = RequestConfig.custom()
+                .setConnectTimeout(15 * 1000)
+                .setConnectionRequestTimeout(300 * 1000)
+                .setSocketTimeout(300 * 1000)
+                .build();
+
         CloseableHttpClient httpClient;
         if (!verifySSL) {
             SSLContext sslContext = null;
@@ -78,9 +95,14 @@ public class JAXRSRESTAccess implements RESTAccessI {
                     .custom()
                     .setConnectionManager(cm)
                     .setSSLSocketFactory(connectionFactory)
+                    .setDefaultRequestConfig(defaultRequestConfig)
                     .build();
         } else {
-            httpClient = HttpClients.custom().setConnectionManager(cm).build();
+            httpClient = HttpClients
+                    .custom()
+                    .setConnectionManager(cm)
+                    .setDefaultRequestConfig(defaultRequestConfig)
+                    .build();
         }
         cm.setMaxTotal(200); // Increase max total connection to 200
         cm.setDefaultMaxPerRoute(30); // Increase default max connection per route to 20
@@ -96,6 +118,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
 
         cb.connectTimeout(10000, TimeUnit.MILLISECONDS);
         cb.readTimeout(100000, TimeUnit.MILLISECONDS);
+        cb.connectionCheckoutTimeout(2, TimeUnit.MINUTES);
 
         if (!verifySSL) {
             cb.disableTrustManager();
@@ -226,6 +249,16 @@ public class JAXRSRESTAccess implements RESTAccessI {
                     throw ex;
                 }
                 return get(c, buildPath, numRetries - 1); // retry
+            } else if (ex instanceof ProcessingException) {
+                System.err.println("GOT YOU, retry "+ numRetries);
+                if (numRetries == 0) {
+                    throw new RESTException(ex.getMessage());
+                }
+                return get(c, buildPath, numRetries - 1); // retry
+            } else if (ex.getCause() != null && ex.getCause() instanceof PrivilegedActionException) {
+                throw new RESTException(ex.getCause().getMessage());
+            } else if (ex.getCause() != null && ex.getCause() instanceof SocketTimeoutException) {
+                throw new RESTException(ex.getCause().getMessage());
             } else if (ex.getCause() != null && ex.getCause() instanceof Exception) {
                 throw new RESTException(ex.getCause().getMessage());
             } else {
@@ -357,6 +390,9 @@ public class JAXRSRESTAccess implements RESTAccessI {
 
         try {
             for (String s : pathComponents) {
+                if (s == null || s.isEmpty()) {
+                    throw new RESTException("Empty path component encountered.");
+                }
                 wr = wr.path(URLEncoder.encode(s, "UTF-8"));
             }
             //System.err.println(wr.getURI().toASCIIString());

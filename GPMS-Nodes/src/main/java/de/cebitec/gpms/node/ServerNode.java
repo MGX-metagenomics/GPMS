@@ -8,9 +8,13 @@ import de.cebitec.gpms.nodefactory.ProjectNodeFactory;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import javax.swing.Action;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
+import org.openide.nodes.Node;
+import org.openide.nodes.PropertySupport;
+import org.openide.nodes.Sheet;
 import org.openide.util.Exceptions;
 import org.openide.util.lookup.Lookups;
 
@@ -44,12 +48,33 @@ public class ServerNode extends AbstractNode implements PropertyChangeListener {
         }
 
         gpmsclient.addPropertyChangeListener(this);
-
+        
+        // needed here so all properties are registered; see property checking code
+        // in Node#firePropertyChange()
+        //
+        getSheet();
     }
 
     @Override
     public Action[] getActions(boolean popup) {
         return new Action[]{new DisconnectAction()};
+    }
+
+    @Override
+    protected Sheet createSheet() {
+        Sheet ret = Sheet.createDefault();
+        Sheet.Set set = ret.get(Sheet.PROPERTIES);
+
+        Node.Property<Boolean> loginState = new PropertySupport.ReadOnly<Boolean>(GPMSClientI.PROP_LOGGEDIN, Boolean.class, "Login state", "Login state") {
+
+            @Override
+            public Boolean getValue() throws IllegalAccessException, InvocationTargetException {
+                return gpmsclient.loggedIn();
+            }
+        };
+        set.put(loginState);
+
+        return ret;
     }
 
     @Override
@@ -64,7 +89,6 @@ public class ServerNode extends AbstractNode implements PropertyChangeListener {
             } else {
                 setShortDescription(gpmsclient.getServerName() + " (Not connected)");
             }
-            return;
         }
         // pass on all other events
         firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());

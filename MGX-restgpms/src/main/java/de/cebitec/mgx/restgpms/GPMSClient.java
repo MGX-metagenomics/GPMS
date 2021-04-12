@@ -134,59 +134,56 @@ public class GPMSClient implements GPMSClientI {
         this.servername = servername;
         this.gpmsBaseURI = gpmsBaseURI;
 
-        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-        CloseableHttpClient httpClient;
-        if (!validateSSL) {
-            SSLContext sslContext = null;
-            try {
-                sslContext = SSLContextBuilder
-                        .create()
-                        .loadTrustMaterial(new TrustSelfSignedStrategy())
-                        .build();
-            } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException ex) {
-                Logger.getLogger(JAXRSRESTAccess.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-            HostnameVerifier allowAllHosts = new NoopHostnameVerifier();
-            SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts);
-
-            httpClient = HttpClients
-                    .custom()
-                    .setConnectionManager(cm)
-                    .setSSLSocketFactory(connectionFactory)
-                    .build();
-        } else {
-            httpClient = HttpClients.custom().setConnectionManager(cm).build();
-        }
-        cm.setMaxTotal(200); // Increase max total connection to 200
-        cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
-        engine = new ApacheHttpClient43Engine(httpClient);
-
-        ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
-                .newBuilder())
-                .httpEngine(engine);
-
-//        for (Class clazz : serializers) {
-//            cb.register(clazz);
+//        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+//        CloseableHttpClient httpClient;
+//        if (!validateSSL) {
+//            SSLContext sslContext = null;
+//            try {
+//                sslContext = SSLContextBuilder
+//                        .create()
+//                        .loadTrustMaterial(new TrustSelfSignedStrategy())
+//                        .build();
+//            } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException ex) {
+//                Logger.getLogger(JAXRSRESTAccess.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//
+//            HostnameVerifier allowAllHosts = new NoopHostnameVerifier();
+//            SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts);
+//
+//            httpClient = HttpClients
+//                    .custom()
+//                    .setConnectionManager(cm)
+//                    .setSSLSocketFactory(connectionFactory)
+//                    .build();
+//        } else {
+//            httpClient = HttpClients.custom().setConnectionManager(cm).build();
 //        }
-        if (!validateSSL) {
-            client = cb
-                    .disableTrustManager()
-                    .connectTimeout(10000, TimeUnit.MILLISECONDS)
-                    .readTimeout(100000, TimeUnit.MILLISECONDS)
-                    .build();
-
-        } else {
-            client = cb
-                    .connectTimeout(10000, TimeUnit.MILLISECONDS)
-                    .readTimeout(100000, TimeUnit.MILLISECONDS)
-                    .build();
-        }
-
-        wt = client.target(gpmsBaseURI);
-
-        wt.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
-        wt.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
+//        cm.setMaxTotal(200); // Increase max total connection to 200
+//        cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
+//        engine = new ApacheHttpClient43Engine(httpClient);
+//
+//        ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
+//                .newBuilder())
+//                .httpEngine(engine);
+//
+//        if (!validateSSL) {
+//            client = cb
+//                    .disableTrustManager()
+//                    .connectTimeout(10000, TimeUnit.MILLISECONDS)
+//                    .readTimeout(100000, TimeUnit.MILLISECONDS)
+//                    .build();
+//
+//        } else {
+//            client = cb
+//                    .connectTimeout(10000, TimeUnit.MILLISECONDS)
+//                    .readTimeout(100000, TimeUnit.MILLISECONDS)
+//                    .build();
+//        }
+//
+//        wt = client.target(gpmsBaseURI);
+//
+//        wt.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
+//        wt.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
     }
 
     @Override
@@ -213,6 +210,7 @@ public class GPMSClient implements GPMSClientI {
         if (!loggedIn()) {
             throw new GPMSException("Not logged in.");
         }
+        
         List<ProjectClassI> ret = new ArrayList<>();
         Response response = getResource("GPMS", "GPMSBean", "listProjectClasses").get(Response.class);
         if (Status.fromStatusCode(response.getStatus()) == Status.OK) {
@@ -364,11 +362,15 @@ public class GPMSClient implements GPMSClientI {
         }
         cm.setMaxTotal(200); // Increase max total connection to 200
         cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
+
+        // discard previous client and engine, if present
         if (client != null) {
             client.close();
+            client = null;
         }
         if (engine != null) {
             engine.close();
+            engine = null;
         }
         engine = new ApacheHttpClient43Engine(httpClient);
 
@@ -403,6 +405,12 @@ public class GPMSClient implements GPMSClientI {
         try {
             response = getResource("GPMS", "GPMSBean", "login").get(Response.class);
         } catch (ProcessingException che) {
+
+            client.close();
+            engine.close();
+            client = null;
+            engine = null;
+
             if (che.getCause() != null && che.getCause() instanceof SSLHandshakeException) {
                 SSLHandshakeException she = (SSLHandshakeException) che.getCause();
                 Throwable t = she.getCause();
@@ -431,11 +439,30 @@ public class GPMSClient implements GPMSClientI {
                 }
                 break;
             case UNAUTHORIZED:
+                client.close();
+                engine.close();
+                client = null;
+                engine = null;
                 throw new GPMSException("Wrong username/password");
             case GATEWAY_TIMEOUT:
+                client.close();
+                engine.close();
+                client = null;
+                engine = null;
                 throw new GPMSException("Connection refused, server down?");
             default:
+                client.close();
+                engine.close();
+                client = null;
+                engine = null;
                 throw new GPMSException(Status.fromStatusCode(response.getStatus()).getReasonPhrase());
+        }
+
+        if (!loggedin) {
+            client.close();
+            engine.close();
+            client = null;
+            engine = null;
         }
 
         pcs.firePropertyChange(PROP_LOGGEDIN, !loggedin, loggedin);
@@ -445,6 +472,10 @@ public class GPMSClient implements GPMSClientI {
 
     @Override
     public final long ping() {
+        if (!loggedIn()) {
+            return -1;
+        }
+        
         try {
             Invocation.Builder wr = getResource("GPMS", "GPMSBean", "ping");
             if (wr == null) { // e.g. after logging out
@@ -464,7 +495,7 @@ public class GPMSClient implements GPMSClientI {
     @Override
     public synchronized void logout() {
         if (loggedIn()) {
-            // set loggedin to false first, so calls to loggedIn() will return false
+            // set loggedin to false first, so subsequent calls to loggedIn() will return false
             loggedin = false;
             // notify all listeners of logout operation in progress
             // so they can execute shutdown hooks, if necessary

@@ -110,6 +110,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
 
         ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
                 .newBuilder())
+                //.useAsyncHttpEngine()
                 .httpEngine(engine);
 
         for (Class clazz : serializers) {
@@ -250,7 +251,6 @@ public class JAXRSRESTAccess implements RESTAccessI {
                 }
                 return get(c, buildPath, numRetries - 1); // retry
             } else if (ex instanceof ProcessingException) {
-                System.err.println("GOT YOU, retry "+ numRetries);
                 if (numRetries == 0) {
                     throw new RESTException(ex.getMessage());
                 }
@@ -349,11 +349,19 @@ public class JAXRSRESTAccess implements RESTAccessI {
     }
 
 //    @Override
-//    public final AsyncRequestHandleI postAsync(Object obj, final String... path) {
+//    public final AsyncRequestHandleI postAsync(Object obj, final String... path) throws RESTException {
 //        Invocation.Builder buildPath = buildPath(path);
 //        Future<Response> res = buildPath.async().post(Entity.entity(obj, PROTOBUF_TYPE));
 //        return new AsyncRequestHandle(res);
 //    }
+//
+//    @Override
+//    public AsyncRequestHandleI getAsync(String... path) throws RESTException {
+//        Invocation.Builder buildPath = buildPath(path);
+//        Future<Response> res = buildPath.async().get();
+//        return new AsyncRequestHandle(res);
+//    }
+
     @Override
     public <U> U post(Object obj, Class<U> targetClass, String... path) throws RESTException {
         Invocation.Builder buildPath = buildPath(path);

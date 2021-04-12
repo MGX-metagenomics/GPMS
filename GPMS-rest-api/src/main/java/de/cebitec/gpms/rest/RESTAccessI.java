@@ -25,14 +25,16 @@ public interface RESTAccessI extends Closeable {
 
     public <U> U post(Object obj, Class<U> targetClass, final String... path) throws RESTException;
 
-//    public AsyncRequestHandleI postAsync(Object obj, final String... path);
+//    public AsyncRequestHandleI getAsync(final String... path) throws RESTException;
+//
+//    public AsyncRequestHandleI postAsync(Object obj, final String... path) throws RESTException;
 
     public void delete(final String... path) throws RESTException;
 
     public <U> U delete(Class<U> targetClass, final String... path) throws RESTException;
 
     public void addFilter(Object filter);
-    
+
     public boolean isClosed();
 
 }

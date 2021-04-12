@@ -91,7 +91,7 @@ public class GPMSTest {
         int cnt = 0;
         while (projectClasses.hasNext()) {
             ProjectClassI pc = projectClasses.next();
-            assertEquals("MGX", pc.getName());
+            assertTrue(pc.getName().startsWith("MGX"));
             Set<RoleI> roles = pc.getRoles();
             for (RoleI role : roles) {
                 System.out.println(" " + role.getName());
@@ -99,7 +99,10 @@ public class GPMSTest {
             assertEquals(3, pc.getRoles().size()); // user, admin, guest
             cnt++;
         }
-        assertEquals(1, cnt);
+        
+        gpms.logout();
+        
+        assertEquals(2, cnt); // MGX and MGX2
     }
 
     @Test
@@ -116,7 +119,8 @@ public class GPMSTest {
             MembershipI m = memberships.next();
             ProjectI project = m.getProject();
             assertNotNull(project);
-            assertEquals("MGX_Unittest", project.getName());
+            System.out.println(project.getName());
+            assertTrue(project.getName().contains("Unittest"));
             assertNotNull(project.getDataSources());
             assertFalse(project.getDataSources().isEmpty());
             for (DataSourceI rds : project.getDataSources()) {
@@ -124,7 +128,10 @@ public class GPMSTest {
             }
             cnt++;
         }
-        assertEquals(1, cnt);
+        
+        gpms.logout();
+        
+        assertEquals(2, cnt);
 
         assertNotNull(restDS);
         //assertNotEquals("", restDS.getURL().toASCIIString());
@@ -141,12 +148,13 @@ public class GPMSTest {
         while (memberships.hasNext()) {
             MembershipI m = memberships.next();
             assertNotNull(m.getProject());
-            System.err.println("  " + m.getProject().getName());
-            assertEquals("MGX_Unittest", m.getProject().getName());
             assertNotNull(m.getRole());
+            System.err.println("  " + m.getProject().getName());
+            assertTrue(m.getProject().getName().endsWith("_Unittest"));
             cnt++;
         }
-        assertEquals(1, cnt);
+        assertEquals(2, cnt);
+        gpms.logout();
     }
 
     @Test
@@ -171,6 +179,7 @@ public class GPMSTest {
             break;
         }
         assertNotNull(master);
+        gpms.logout();
     }
 
     @Test
@@ -178,13 +187,16 @@ public class GPMSTest {
         System.out.println("testLogin");
         String login = "mgx_unittestRO";
         String password = "gut-isM5iNt";
+        GPMSClientI gpms = TestMaster.get();
         boolean result = false;
         try {
-            result = TestMaster.get().login(login, password);
+            result = gpms.login(login, password);
         } catch (GPMSException ex) {
             fail(ex.getMessage());
         }
         assertTrue(result);
+        gpms.logout();
+        
     }
 
     @Test
@@ -193,21 +205,27 @@ public class GPMSTest {
         String login = "mgx_unittestRO";
         String password = "gut-isM5iNt";
         boolean result = false;
-        final GPMSClientI cli = TestMaster.get();
+        final GPMSClientI gpms = TestMaster.get();
+        assertFalse(gpms.loggedIn());
+        
         try {
-            result = cli.login(login, password);
+            result = gpms.login(login, password);
         } catch (GPMSException ex) {
             fail(ex.getMessage());
+        
         }
         assertTrue(result);
-        cli.addPropertyChangeListener(new PropertyChangeListener() {
+        assertTrue(gpms.loggedIn());
+        
+        gpms.addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
-                assertFalse(cli.loggedIn());
+                assertFalse((Boolean)evt.getNewValue());
+                assertFalse(gpms.loggedIn());
             }
         });
-        cli.logout();
-        assertFalse(cli.loggedIn());
+        gpms.logout();
+        assertFalse(gpms.loggedIn());
     }
 
     @Test
@@ -231,12 +249,17 @@ public class GPMSTest {
         Assume.assumeNotNull(login);
         Assume.assumeNotNull(password);
         System.out.println("  using credentials for login " + login);
+        
+        GPMSClientI gpms = TestMaster.get();
         boolean result = false;
         try {
-            result = TestMaster.get().login(login, password);
+            result = gpms.login(login, password);
         } catch (GPMSException ex) {
             fail(ex.getMessage());
         }
+        
+        gpms.logout();
+        
         assertTrue(result);
     }
 
@@ -261,6 +284,7 @@ public class GPMSTest {
             fail(ex.getMessage());
         }
         assertTrue(result);
+        gpms.logout();
     }
 
     @Test
@@ -270,16 +294,20 @@ public class GPMSTest {
         String password = "WRONG";
         GPMSClientI gpms = TestMaster.get();
         assertNotNull(gpms);
+        assertFalse(gpms.loggedIn());
+        
         gpms.logout();
+        
         boolean result = false;
         try {
             result = gpms.login(login, password);
         } catch (GPMSException ex) {
-            if (ex.getMessage().contains("Wrong username/passw")) {
+            if (ex.getMessage().contains("Wrong username/password")) {
             } else {
                 fail(ex.getMessage());
             }
         }
+        assertFalse(gpms.loggedIn());
     }
 
     @Test
@@ -287,6 +315,7 @@ public class GPMSTest {
         System.out.println("testInvalidLogin2");
         GPMSClientI gpms = TestMaster.get();
         assertNotNull(gpms);
+        assertFalse(gpms.loggedIn());
 
         // call login() with wrong credentials on an instance that is already
         // logged in successfully
@@ -301,6 +330,8 @@ public class GPMSTest {
                 fail(ex.getMessage());
             }
         }
+        
+        assertFalse(gpms.loggedIn());
     }
 
     @Test
@@ -316,6 +347,7 @@ public class GPMSTest {
         assertTrue(result > 100000);
         gpms.logout();
         result = gpms.ping();
+        assertEquals(-1, result);
     }
 
     @Test
@@ -339,7 +371,8 @@ public class GPMSTest {
         if (projNames.endsWith(", ")) {
             projNames = projNames.substring(0, projNames.length() - 2);
         }
-        assertEquals("mgx_unittestRO should only be a member of \'MGX_Unittest\', actual project list: " + projNames, 1, cnt);
+        assertEquals("mgx_unittestRO should only be a member of \'MGX_Unittest\', actual project list: " + projNames, 2, cnt);
+        gpms.logout();
     }
 
 //    @Test

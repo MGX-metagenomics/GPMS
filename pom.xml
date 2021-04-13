@@ -29,7 +29,7 @@
     </build>
     
     <properties>
-        <netbeans.version>RELEASE82</netbeans.version>
+        <netbeans.version>RELEASE123</netbeans.version>
         <brandingToken>gpms</brandingToken>
     </properties>
     

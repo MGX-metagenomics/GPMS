@@ -1,18 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>de.cebitec.mgx</groupId>
-    <artifactId>MGX-restgpms</artifactId>
-    <version>1.1</version>
-    <packaging>bundle</packaging>
     
     <parent>
         <artifactId>GPMS</artifactId>
         <groupId>de.cebitec.gpms</groupId>
         <version>1.1</version>
     </parent>
-
+    
+    <groupId>de.cebitec.mgx</groupId>
+    <artifactId>MGX-restgpms</artifactId>
+    <packaging>bundle</packaging>
     <name>MGX-restgpms</name>
     
     <build>
@@ -34,15 +32,27 @@
                         <Import-Package>
                             org.osgi.framework,
                             javax.net.ssl,
-                            com.sun.jersey.api.client,
-                            com.sun.jersey.api.client.filter,
-                            com.sun.jersey.api.client.config,
-                            com.sun.jersey.client.urlconnection,
+                            javax.annotation,
+                            javax.ws.rs,
+                            javax.ws.rs.core,
+                            javax.ws.rs.client,
                             de.cebitec.gpms.core,
                             de.cebitec.gpms.rest,
                             de.cebitec.gpms.dto,
                             de.cebitec.gpms.model,
-                            de.cebitec.mgx.protobuf.serializer
+                            de.cebitec.mgx.protobuf.serializer,
+                            org.jboss.resteasy.client.jaxrs,
+                            org.jboss.resteasy.client.jaxrs.engines,
+                            org.jboss.resteasy.client.jaxrs.internal,
+                            org.apache.http.impl.client,
+                            org.apache.http.impl.conn,
+                            org.apache.http.ssl,
+                            org.apache.http.conn,
+                            org.apache.http.conn.socket,
+                            org.apache.http.conn.ssl,
+                            org.apache.http.client,
+                            org.apache.http.config,
+                            org.apache.http.client.config
                         </Import-Package>
                         <Export-Package>de.cebitec.mgx.restgpms</Export-Package>
                         <Bundle-Activator>de.cebitec.mgx.restgpms.Activator</Bundle-Activator>
@@ -125,6 +135,8 @@
             <artifactId>ProtoBuf-Serializer</artifactId>
             <version>1.0</version>
         </dependency>
+        
+        <!--
         <dependency>
             <groupId>org.ops4j.pax.exam</groupId>
             <artifactId>pax-exam-container-forked</artifactId>
@@ -161,12 +173,22 @@
             <version>1.2.4</version>
             <scope>test</scope>
         </dependency>
+        
         <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.framework</artifactId>
-            <version>5.6.10</version>
+            <version>6.0.3</version>
             <scope>test</scope>
         </dependency>
+        -->
+        
+        <!--
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+        -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
@@ -180,9 +202,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>1.18.2</version>
+            <groupId>de.cebitec.mgx</groupId>
+            <artifactId>RESTEasy-OSGi</artifactId>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>de.cebitec.gpms</groupId>
@@ -199,6 +221,28 @@
             <artifactId>org.osgi.core</artifactId>
             <version>6.0.0</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+        
+        <!-- jdk 11 -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-core</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>2.3.0</version>
         </dependency>
     </dependencies>
 

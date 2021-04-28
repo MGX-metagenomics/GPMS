@@ -1,15 +1,5 @@
 package de.cebitec.mgx.restgpms;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientHandlerException;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.ClientResponse.Status;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
-import com.sun.jersey.client.urlconnection.HTTPSProperties;
 import de.cebitec.gpms.core.DataSourceI;
 import de.cebitec.gpms.core.DataSourceTypeI;
 import de.cebitec.gpms.core.DataSource_ApplicationServerI;
@@ -35,31 +25,49 @@ import de.cebitec.gpms.model.Role;
 import de.cebitec.gpms.model.User;
 import de.cebitec.gpms.rest.GPMSClientI;
 import de.cebitec.gpms.rest.RESTMasterI;
+import static de.cebitec.mgx.restgpms.JAXRSRESTAccess.PROTOBUF_TYPE;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.security.KeyManagementException;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.cert.CertificateExpiredException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
+import org.jboss.resteasy.client.jaxrs.internal.BasicAuthentication;
 
 /**
  *
@@ -67,8 +75,10 @@ import javax.net.ssl.X509TrustManager;
  */
 public class GPMSClient implements GPMSClientI {
 
-    private ClientConfig cc = null;
+    //private final ClientConfig cc;
+    private ApacheHttpClient43Engine engine;
     private Client client;
+    private WebTarget wt;
     private final String gpmsBaseURI;
     private final String servername;
     private UserI user;
@@ -120,63 +130,57 @@ public class GPMSClient implements GPMSClientI {
         this.validateSSL = requireSSL;
         this.servername = servername;
         this.gpmsBaseURI = gpmsBaseURI;
-        cc = new DefaultClientConfig();
-        cc.getClasses().add(de.cebitec.mgx.protobuf.serializer.PBReader.class);
-        cc.getClasses().add(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
-        cc.getProperties().put(ClientConfig.PROPERTY_THREADPOOL_SIZE, 10);
-        cc.getProperties().put(ClientConfig.PROPERTY_CONNECT_TIMEOUT, 10000); // in ms
-        cc.getProperties().put(ClientConfig.PROPERTY_READ_TIMEOUT, 30000);
 
-        if (!this.validateSSL) {
-
-            /*
-             * taken from
-             * http://stackoverflow.com/questions/6047996/ignore-self-signed-ssl-cert-using-jersey-client
-             * 
-             * code below disables certificate validation; required for servers running
-             * with self-signed or otherwise untrusted certificates
-             */
-            // Create a trust manager that does not validate certificate chains
-            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-                @Override
-                public X509Certificate[] getAcceptedIssuers() {
-                    return null;
-                }
-
-                @Override
-                public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                }
-
-                @Override
-                public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                }
-
-            }};
-
-            SSLContext ctx = null;
-            try {
-                ctx = SSLContext.getInstance("SSL");
-                ctx.init(null, trustAllCerts, new SecureRandom());
-                HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
-            } catch (NoSuchAlgorithmException | KeyManagementException ex) {
-                Logger.getLogger(RESTMaster.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-            // Create all-trusting host name verifier
-            HostnameVerifier allHostsValid = new HostnameVerifier() {
-                @Override
-                public boolean verify(String hostname, SSLSession session) {
-                    return true;
-                }
-            };
-
-            // Install the all-trusting host verifier
-            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
-
-            cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(null, ctx));
-        }
-
-        client = Client.create(cc);
+//        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+//        CloseableHttpClient httpClient;
+//        if (!validateSSL) {
+//            SSLContext sslContext = null;
+//            try {
+//                sslContext = SSLContextBuilder
+//                        .create()
+//                        .loadTrustMaterial(new TrustSelfSignedStrategy())
+//                        .build();
+//            } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException ex) {
+//                Logger.getLogger(JAXRSRESTAccess.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//
+//            HostnameVerifier allowAllHosts = new NoopHostnameVerifier();
+//            SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts);
+//
+//            httpClient = HttpClients
+//                    .custom()
+//                    .setConnectionManager(cm)
+//                    .setSSLSocketFactory(connectionFactory)
+//                    .build();
+//        } else {
+//            httpClient = HttpClients.custom().setConnectionManager(cm).build();
+//        }
+//        cm.setMaxTotal(200); // Increase max total connection to 200
+//        cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
+//        engine = new ApacheHttpClient43Engine(httpClient);
+//
+//        ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
+//                .newBuilder())
+//                .httpEngine(engine);
+//
+//        if (!validateSSL) {
+//            client = cb
+//                    .disableTrustManager()
+//                    .connectTimeout(10000, TimeUnit.MILLISECONDS)
+//                    .readTimeout(100000, TimeUnit.MILLISECONDS)
+//                    .build();
+//
+//        } else {
+//            client = cb
+//                    .connectTimeout(10000, TimeUnit.MILLISECONDS)
+//                    .readTimeout(100000, TimeUnit.MILLISECONDS)
+//                    .build();
+//        }
+//
+//        wt = client.target(gpmsBaseURI);
+//
+//        wt.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
+//        wt.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
     }
 
     @Override
@@ -185,9 +189,9 @@ public class GPMSClient implements GPMSClientI {
             throw new GPMSException("Not logged in.");
         }
         List<ProjectClassI> ret = new LinkedList<>();
-        ClientResponse response = getResource().path("GPMS").path("GPMSBean").path("listProjectClasses").get(ClientResponse.class);
+        Response response = getResource("GPMS", "GPMSBean", "listProjectClasses").get(Response.class);
         if (Status.fromStatusCode(response.getStatus()) == Status.OK) {
-            ProjectClassDTOList list = response.<ProjectClassDTOList>getEntity(ProjectClassDTOList.class);
+            ProjectClassDTOList list = response.readEntity(ProjectClassDTOList.class);
             for (ProjectClassDTO dto : list.getProjectClassList()) {
 
                 ProjectClassI pClass = new ProjectClass(dto.getName(), new HashSet<RoleI>());
@@ -218,10 +222,10 @@ public class GPMSClient implements GPMSClientI {
     public Iterator<MembershipI> getMemberships() throws GPMSException {
         List<MembershipI> ret = new ArrayList<>();
         if (loggedIn()) {
-            ClientResponse response = null;
+            Response response = null;
             try {
-                response = getResource().path("GPMS").path("GPMSBean").path("listMemberships").get(ClientResponse.class);
-            } catch (ClientHandlerException ex) {
+                response = getResource("GPMS", "GPMSBean", "listMemberships").get(Response.class);
+            } catch (ProcessingException ex) {
                 if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                     return getMemberships(); //retry
                 } else if (ex.getCause() != null && ex.getCause() instanceof UnknownHostException) {
@@ -231,7 +235,8 @@ public class GPMSClient implements GPMSClientI {
             }
 
             if (response != null && Status.fromStatusCode(response.getStatus()) == Status.OK) {
-                MembershipDTOList list = response.<MembershipDTOList>getEntity(MembershipDTOList.class);
+                MembershipDTOList list = response.readEntity(MembershipDTOList.class);
+                response.close();
                 for (MembershipDTO mdto : list.getMembershipList()) {
 
                     ProjectDTO projectDTO = mdto.getProject();
@@ -243,7 +248,7 @@ public class GPMSClient implements GPMSClientI {
                     }
 
                     // create an artificial datasource based on the base URI for the app server
-                    String projectBaseURI = projectDTO.hasBaseURI() && !projectDTO.getBaseURI().isEmpty()
+                    String projectBaseURI = !projectDTO.getBaseURI().isEmpty()
                             ? projectDTO.getBaseURI()
                             : gpmsBaseURI + projectDTO.getName();
                     URI dsURI;
@@ -265,17 +270,29 @@ public class GPMSClient implements GPMSClientI {
                     ret.add(new Membership(proj, role));
                 }
             } else {
+                if (response != null) {
+                    response.close();
+                }
                 return null;
             }
         }
         return ret.iterator();
     }
 
-    private WebResource getResource() {
+    private Invocation.Builder getResource(String... pathComponents) {
         if (client == null) {
             return null;
         }
-        return client.resource(gpmsBaseURI);
+        WebTarget wr = wt;
+        for (String s : pathComponents) {
+            try {
+                wr = wr.path(URLEncoder.encode(s, "UTF-8"));
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(GPMSClient.class.getName()).log(Level.SEVERE, null, ex);
+                return null;
+            }
+        }
+        return wr.request(PROTOBUF_TYPE).accept(PROTOBUF_TYPE);
     }
 
     @Override
@@ -285,6 +302,10 @@ public class GPMSClient implements GPMSClientI {
 
     @Override
     public synchronized boolean login(String login, String password) throws GPMSException {
+        return login(login, password, 5);
+    }
+
+    private boolean login(String login, String password, int maxAttempts) throws GPMSException {
         if (loggedIn()) {
             throw new GPMSException("Already logged in as " + getUser().getLogin());
 
@@ -292,16 +313,81 @@ public class GPMSClient implements GPMSClientI {
         if (login == null || password == null) {
             return false;
         }
-        client = Client.create(cc);
-        client.removeAllFilters();
-        client.addFilter(new HTTPBasicAuthFilter(login, password));
+
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        CloseableHttpClient httpClient;
+        if (!validateSSL) {
+            SSLContext sslContext = null;
+            try {
+                sslContext = SSLContextBuilder
+                        .create()
+                        .loadTrustMaterial(new TrustSelfSignedStrategy())
+                        .build();
+            } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException ex) {
+                Logger.getLogger(JAXRSRESTAccess.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            HostnameVerifier allowAllHosts = new NoopHostnameVerifier();
+            SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts);
+
+            httpClient = HttpClients
+                    .custom()
+                    .setSSLSocketFactory(connectionFactory)
+                    .build();
+        } else {
+            httpClient = HttpClients.custom().setConnectionManager(cm).build();
+        }
+        cm.setMaxTotal(200); // Increase max total connection to 200
+        cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
+
+        // discard previous client and engine, if present
+        if (client != null) {
+            client.close();
+            client = null;
+        }
+        if (engine != null) {
+            engine.close();
+            engine = null;
+        }
+        engine = new ApacheHttpClient43Engine(httpClient);
+
+        ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
+                .newBuilder())
+                .httpEngine(engine);
+
+        if (!validateSSL) {
+            client = cb
+                    .disableTrustManager()
+                    .connectTimeout(10000, TimeUnit.MILLISECONDS)
+                    .readTimeout(100000, TimeUnit.MILLISECONDS)
+                    .build();
+
+        } else {
+            client = cb
+                    .connectTimeout(10000, TimeUnit.MILLISECONDS)
+                    .readTimeout(100000, TimeUnit.MILLISECONDS)
+                    .build();
+        }
+
+        wt = client.target(gpmsBaseURI);
+        wt.register(new BasicAuthentication(login, password));
+
+        wt.register(de.cebitec.mgx.protobuf.serializer.PBReader.class);
+        wt.register(de.cebitec.mgx.protobuf.serializer.PBWriter.class);
+
         loggedin = false;
         user = null;
 
-        ClientResponse response;
+        Response response;
         try {
-            response = getResource().path("GPMS").path("GPMSBean").path("login").get(ClientResponse.class);
-        } catch (ClientHandlerException che) {
+            response = getResource("GPMS", "GPMSBean", "login").get(Response.class);
+        } catch (ProcessingException che) {
+
+            client.close();
+            engine.close();
+            client = null;
+            engine = null;
+
             if (che.getCause() != null && che.getCause() instanceof SSLHandshakeException) {
                 SSLHandshakeException she = (SSLHandshakeException) che.getCause();
                 Throwable t = she.getCause();
@@ -311,7 +397,9 @@ public class GPMSClient implements GPMSClientI {
                 if (t instanceof CertificateExpiredException) {
                     throw new GPMSException("Server SSL certificate expired: " + t.getMessage());
                 }
-                return login(login, password);
+                if (maxAttempts > 0) {
+                    return login(login, password, maxAttempts - 1);
+                }
             } else if (che.getCause() != null && che.getCause() instanceof UnknownHostException) {
                 throw new GPMSException("Could not resolve server address. Check your internet connection.");
             }
@@ -321,18 +409,37 @@ public class GPMSClient implements GPMSClientI {
 
         switch (Status.fromStatusCode(response.getStatus())) {
             case OK:
-                GPMSString reply = response.<GPMSString>getEntity(GPMSString.class);
+                GPMSString reply = response.readEntity(GPMSString.class);
                 if ("MGX".equals(reply.getValue())) {
                     loggedin = true;
                     user = new User(login, password, new ArrayList<MembershipI>());
                 }
                 break;
             case UNAUTHORIZED:
+                client.close();
+                engine.close();
+                client = null;
+                engine = null;
                 throw new GPMSException("Wrong username/password");
             case GATEWAY_TIMEOUT:
+                client.close();
+                engine.close();
+                client = null;
+                engine = null;
                 throw new GPMSException("Connection refused, server down?");
             default:
+                client.close();
+                engine.close();
+                client = null;
+                engine = null;
                 throw new GPMSException(Status.fromStatusCode(response.getStatus()).getReasonPhrase());
+        }
+
+        if (!loggedin) {
+            client.close();
+            engine.close();
+            client = null;
+            engine = null;
         }
 
         pcs.firePropertyChange(PROP_LOGGEDIN, !loggedin, loggedin);
@@ -342,15 +449,17 @@ public class GPMSClient implements GPMSClientI {
 
     @Override
     public final long ping() {
+        if (!loggedIn()) {
+            return -1;
+        }
+        
         try {
-            WebResource wr = getResource();
+            Invocation.Builder wr = getResource("GPMS", "GPMSBean", "ping");
             if (wr == null) { // e.g. after logging out
                 return -1;
             }
-            return wr.path("GPMS").path("GPMSBean").path("ping").get(GPMSLong.class).getValue();
-        } catch (UniformInterfaceException ufie) {
-            System.err.println("GPMSClient MSG: " + ufie.getMessage());
-        } catch (ClientHandlerException ex) {
+            return wr.get(GPMSLong.class).getValue();
+        } catch (ProcessingException ex) {
             if (ex.getCause() != null && ex.getCause() instanceof SSLHandshakeException) {
                 return ping(); //retry
             } else if (ex.getCause() != null && ex.getCause() instanceof UnknownHostException) {
@@ -363,13 +472,16 @@ public class GPMSClient implements GPMSClientI {
     @Override
     public synchronized void logout() {
         if (loggedIn()) {
-            // set loggedin to false first, so calls to loggedIn() will return false
+            // set loggedin to false first, so subsequent calls to loggedIn() will return false
             loggedin = false;
             // notify all listeners of logout operation in progress
             // so they can execute shutdown hooks, if necessary
             pcs.firePropertyChange(PROP_LOGGEDIN, true, false);
             // after the property chance has been processed,
             // release resources
+            client.close();
+            engine.close();
+            engine = null;
             client = null;
             user = null;
         }
@@ -402,7 +514,7 @@ public class GPMSClient implements GPMSClientI {
     public boolean validateSSL() {
         return validateSSL;
     }
-    
+
     @Override
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         pcs.addPropertyChangeListener(listener);

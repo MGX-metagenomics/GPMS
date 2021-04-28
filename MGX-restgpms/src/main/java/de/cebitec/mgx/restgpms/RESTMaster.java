@@ -71,10 +71,9 @@ public class RESTMaster implements RESTMasterI, PropertyChangeListener {
 
     @Override
     public final void close() {
-        //gpmsclient.logout();
-        //project = null;
         role = null;
         user = null;
+        gpmsclient.removePropertyChangeListener(this);
     }
 
     @Override

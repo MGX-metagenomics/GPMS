@@ -23,42 +23,43 @@ import java.util.Set;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Assume;
-import org.ops4j.pax.exam.Configuration;
-import static org.ops4j.pax.exam.CoreOptions.bundle;
-import static org.ops4j.pax.exam.CoreOptions.junitBundles;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
-import static org.ops4j.pax.exam.CoreOptions.options;
-import static org.ops4j.pax.exam.CoreOptions.systemProperty;
-import org.ops4j.pax.exam.Option;
 
 /**
  *
  * @author sj
  */
-//@RunWith(PaxExam.class)
 public class GPMSTest {
 
-    @Configuration
-    public static Option[] configuration() {
-        return options(
-                junitBundles(),
-                mavenBundle().groupId("com.sun.jersey").artifactId("jersey-client").version("1.18.2"),
-                mavenBundle().groupId("com.sun.jersey").artifactId("jersey-core").version("1.18.2"),
-                mavenBundle().groupId("com.google.protobuf").artifactId("protobuf-java").version("2.6.1"),
-                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-DTO").version("1.1"),
-                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-core-api").version("1.1"),
-                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-rest-api").version("1.1"),
-                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-model").version("1.1"),
-                mavenBundle().groupId("de.cebitec.mgx").artifactId("ProtoBuf-Serializer").version("1.0"),
-                systemProperty("org.ops4j.pax.logging.DefaultServiceLog.level").value("WARN"),
-                bundle("reference:file:target/classes")
-        );
-    }
+//    @Configuration
+//    public static Option[] configuration() {
+//        return options(
+//                //bootDelegationPackage("javax.annotation"),
+//                junitBundles(),
+//                mavenBundle("javax.validation", "validation-api", "2.0.1.Final"),
+//                mavenBundle("javax.annotation", "javax.annotation-api", "1.3.2"),
+//                mavenBundle("com.sun.activation", "javax.activation", "1.2.0"),
+//                mavenBundle("javax.xml.bind", "jaxb-api", "2.3.0"),
+//                mavenBundle("com.sun.xml.bind", "jaxb-core", "2.3.0"),
+//                mavenBundle("com.sun.xml.bind", "jaxb-impl", "2.3.0"),
+//                mavenBundle().groupId("de.cebitec.mgx").artifactId("RESTEasy-OSGi").version("2.0"),
+//                mavenBundle().groupId("org.javassist").artifactId("javassist").version("3.22.0-CR2"),
+//                mavenBundle().groupId("org.jboss.spec.javax.ws.rs").artifactId("jboss-jaxrs-api_2.1_spec").version("1.0.2.Final"),
+//                mavenBundle().groupId("com.google.protobuf").artifactId("protobuf-java").version("3.11.0"),
+//                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-DTO").version("2.0"),
+//                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-core-api").version("2.0"),
+//                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-rest-api").version("2.0"),
+//                mavenBundle().groupId("de.cebitec.gpms").artifactId("GPMS-model").version("2.0"),
+//                mavenBundle().groupId("de.cebitec.mgx").artifactId("ProtoBuf-Serializer").version("2.0"),
+//                systemProperty("org.ops4j.pax.logging.DefaultServiceLog.level").value("WARN"),
+//                bundle("reference:file:target/classes")
+//        );
+//    }
 
     @Test
     public void getProjectClassesLoggedOut() {
         System.out.println("getProjectClassesLoggedOut");
         GPMSClientI gpms = TestMaster.get();
+        assertNotNull(gpms);
         Iterator<ProjectClassI> projectClasses = null;
         try {
             projectClasses = gpms.getProjectClasses();
@@ -90,15 +91,18 @@ public class GPMSTest {
         int cnt = 0;
         while (projectClasses.hasNext()) {
             ProjectClassI pc = projectClasses.next();
-            assertEquals("MGX", pc.getName());
+            assertTrue(pc.getName().startsWith("MGX"));
             Set<RoleI> roles = pc.getRoles();
             for (RoleI role : roles) {
-                System.out.println(role.getName());
+                System.out.println(" " + role.getName());
             }
             assertEquals(3, pc.getRoles().size()); // user, admin, guest
             cnt++;
         }
-        assertEquals(1, cnt);
+        
+        gpms.logout();
+        
+        assertEquals(2, cnt); // MGX and MGX2
     }
 
     @Test
@@ -106,6 +110,7 @@ public class GPMSTest {
         System.out.println("getMemberships");
         GPMSClientI gpms = TestMaster.get();
         gpms.login("mgx_unittestRO", "gut-isM5iNt");
+
         Iterator<MembershipI> memberships = gpms.getMemberships();
         assertNotNull(memberships);
         int cnt = 0;
@@ -114,7 +119,8 @@ public class GPMSTest {
             MembershipI m = memberships.next();
             ProjectI project = m.getProject();
             assertNotNull(project);
-            assertEquals("MGX_Unittest", project.getName());
+            System.out.println(project.getName());
+            assertTrue(project.getName().contains("Unittest"));
             assertNotNull(project.getDataSources());
             assertFalse(project.getDataSources().isEmpty());
             for (DataSourceI rds : project.getDataSources()) {
@@ -122,11 +128,13 @@ public class GPMSTest {
             }
             cnt++;
         }
-        assertEquals(1, cnt);
+        
+        gpms.logout();
+        
+        assertEquals(2, cnt);
 
         assertNotNull(restDS);
         //assertNotEquals("", restDS.getURL().toASCIIString());
-
     }
 
     @Test
@@ -140,12 +148,13 @@ public class GPMSTest {
         while (memberships.hasNext()) {
             MembershipI m = memberships.next();
             assertNotNull(m.getProject());
-            System.err.println("  " + m.getProject().getName());
-            assertEquals("MGX_Unittest", m.getProject().getName());
             assertNotNull(m.getRole());
+            System.err.println("  " + m.getProject().getName());
+            assertTrue(m.getProject().getName().endsWith("_Unittest"));
             cnt++;
         }
-        assertEquals(1, cnt);
+        assertEquals(2, cnt);
+        gpms.logout();
     }
 
     @Test
@@ -170,6 +179,7 @@ public class GPMSTest {
             break;
         }
         assertNotNull(master);
+        gpms.logout();
     }
 
     @Test
@@ -177,13 +187,16 @@ public class GPMSTest {
         System.out.println("testLogin");
         String login = "mgx_unittestRO";
         String password = "gut-isM5iNt";
+        GPMSClientI gpms = TestMaster.get();
         boolean result = false;
         try {
-            result = TestMaster.get().login(login, password);
+            result = gpms.login(login, password);
         } catch (GPMSException ex) {
             fail(ex.getMessage());
         }
         assertTrue(result);
+        gpms.logout();
+        
     }
 
     @Test
@@ -192,21 +205,27 @@ public class GPMSTest {
         String login = "mgx_unittestRO";
         String password = "gut-isM5iNt";
         boolean result = false;
-        final GPMSClientI cli = TestMaster.get();
+        final GPMSClientI gpms = TestMaster.get();
+        assertFalse(gpms.loggedIn());
+        
         try {
-            result = cli.login(login, password);
+            result = gpms.login(login, password);
         } catch (GPMSException ex) {
             fail(ex.getMessage());
+        
         }
         assertTrue(result);
-        cli.addPropertyChangeListener(new PropertyChangeListener() {
+        assertTrue(gpms.loggedIn());
+        
+        gpms.addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
-                assertFalse(cli.loggedIn());
+                assertFalse((Boolean)evt.getNewValue());
+                assertFalse(gpms.loggedIn());
             }
         });
-        cli.logout();
-        assertFalse(cli.loggedIn());
+        gpms.logout();
+        assertFalse(gpms.loggedIn());
     }
 
     @Test
@@ -230,12 +249,17 @@ public class GPMSTest {
         Assume.assumeNotNull(login);
         Assume.assumeNotNull(password);
         System.out.println("  using credentials for login " + login);
+        
+        GPMSClientI gpms = TestMaster.get();
         boolean result = false;
         try {
-            result = TestMaster.get().login(login, password);
+            result = gpms.login(login, password);
         } catch (GPMSException ex) {
             fail(ex.getMessage());
         }
+        
+        gpms.logout();
+        
         assertTrue(result);
     }
 
@@ -260,6 +284,7 @@ public class GPMSTest {
             fail(ex.getMessage());
         }
         assertTrue(result);
+        gpms.logout();
     }
 
     @Test
@@ -269,16 +294,20 @@ public class GPMSTest {
         String password = "WRONG";
         GPMSClientI gpms = TestMaster.get();
         assertNotNull(gpms);
+        assertFalse(gpms.loggedIn());
+        
         gpms.logout();
+        
         boolean result = false;
         try {
             result = gpms.login(login, password);
         } catch (GPMSException ex) {
-            if (ex.getMessage().contains("Wrong username/passw")) {
+            if (ex.getMessage().contains("Wrong username/password")) {
             } else {
                 fail(ex.getMessage());
             }
         }
+        assertFalse(gpms.loggedIn());
     }
 
     @Test
@@ -286,6 +315,7 @@ public class GPMSTest {
         System.out.println("testInvalidLogin2");
         GPMSClientI gpms = TestMaster.get();
         assertNotNull(gpms);
+        assertFalse(gpms.loggedIn());
 
         // call login() with wrong credentials on an instance that is already
         // logged in successfully
@@ -300,6 +330,8 @@ public class GPMSTest {
                 fail(ex.getMessage());
             }
         }
+        
+        assertFalse(gpms.loggedIn());
     }
 
     @Test
@@ -315,6 +347,7 @@ public class GPMSTest {
         assertTrue(result > 100000);
         gpms.logout();
         result = gpms.ping();
+        assertEquals(-1, result);
     }
 
     @Test
@@ -338,7 +371,8 @@ public class GPMSTest {
         if (projNames.endsWith(", ")) {
             projNames = projNames.substring(0, projNames.length() - 2);
         }
-        assertEquals("mgx_unittestRO should only be a member of \'MGX_Unittest\', actual project list: " + projNames, 1, cnt);
+        assertEquals("mgx_unittestRO should only be a member of \'MGX_Unittest\', actual project list: " + projNames, 2, cnt);
+        gpms.logout();
     }
 
 //    @Test

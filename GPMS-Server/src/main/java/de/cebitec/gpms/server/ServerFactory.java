@@ -48,9 +48,9 @@ public class ServerFactory {
         // add default site
         if (data.isEmpty()) {
             try {
-                data.add(GPMSClientFactory.createClient("CeBiTec", "https://mgx.cebitec.uni-bielefeld.de/MGX-maven-web/webresources/", true));
-                data.add(GPMSClientFactory.createClient("JLU", "https://mgx.computational.bio.uni-giessen.de/MGX-maven-web/webresources/", true));
-                data.add(GPMSClientFactory.createClient("JLU2", "https://mgx-test.computational.bio.uni-giessen.de/MGX-maven-web/webresources/", false));
+                //data.add(GPMSClientFactory.createClient("CeBiTec", "https://mgx.cebitec.uni-bielefeld.de/MGX-maven-web/webresources/", true));
+                //data.add(GPMSClientFactory.createClient("JLU", "https://mgx.computational.bio.uni-giessen.de/MGX-maven-web/webresources/", true));
+                data.add(GPMSClientFactory.createClient("JLU", "https://mgx-test.computational.bio.uni-giessen.de/MGX-maven-web/webresources/", false));
             } catch (GPMSException ex) {
                 Exceptions.printStackTrace(ex);
             }

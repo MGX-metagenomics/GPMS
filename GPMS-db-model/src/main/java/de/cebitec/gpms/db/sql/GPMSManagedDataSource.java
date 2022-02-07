@@ -72,23 +72,20 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
 
     @Override
     public final synchronized void subscribe(Object caller) {
-        numSubscribers.incrementAndGet();
 
-//        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
         synchronized (subscribers) {
             if (!subscribers.increment(caller)) {
                 subscribers.put(caller, 1);
+                numSubscribers.incrementAndGet();
             } else {
                 throw new RuntimeException("Duplicate datasource subscription by " + caller);
             }
         }
-//        System.err.println("Datasource#subscribe: " + connInUse.get() + " connections used, " + numSubscribers.get() + " subscriptions.");
     }
 
     @Override
     public final synchronized void close(Object caller) {
 
-//        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
         synchronized (subscribers) {
             if (!subscribers.containsKey(caller)) {
                 if (DEBUG) {
@@ -105,7 +102,6 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
         // close == unsubscribe
         numSubscribers.decrementAndGet();
 
-//        System.err.println("Datasource#close: " + connInUse.get() + " connections used, " + numSubscribers.get() + " subscriptions.");
         if (connInUse.get() == 0 && numSubscribers.get() == 0) {
             LOG.log(Level.INFO, "Closing backend SQL datasource for {0}", gpmsDS.getName());
             if (dataSource != null && dataSource instanceof AutoCloseable) {
@@ -132,7 +128,6 @@ public class GPMSManagedDataSource implements GPMSManagedDataSourceI {
     @Override
     public final GPMSManagedConnectionI getConnection(Object caller) throws SQLException {
 
-//        String caller = Thread.currentThread().getStackTrace()[2].getClassName();
         synchronized (subscribers) {
             if (!subscribers.containsKey(caller)) {
                 if (DEBUG) {

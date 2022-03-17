@@ -52,7 +52,7 @@ public class GPMSGlassfishRealm extends AppservRealm {
     //
     private LDAPConnectionPool ldapPool;
     //
-    private Cache<UserI, String[]> authcache = null;
+    private static Cache<UserI, String[]> authcache = null;
 
     @Override
     protected void init(Properties props) throws BadRealmException, NoSuchRealmException {
@@ -149,22 +149,23 @@ public class GPMSGlassfishRealm extends AppservRealm {
 
         ServerSet serverSet = new RoundRobinServerSet(hosts, ports);
         try {
-            BindRequest breq = new SimpleBindRequest("cn=gpms_access," + basedn, "gpms");
+            BindRequest breq = new SimpleBindRequest("cn=gpms_access,dc=computational,dc=bio,dc=uni-giessen,dc=de", "gpms");
             ldapPool = new LDAPConnectionPool(serverSet, breq, numConnections);
         } catch (LDAPException ex) {
             log.log(Level.SEVERE, null, ex);
             return;
         }
 
-        //
-        // never keep entries for more than 10 minutes
-        // so a user can re-gain access e.g. after changing his/her password
-        //
-        authcache = CacheBuilder.newBuilder()
-                .expireAfterAccess(5, TimeUnit.MINUTES)
-                .expireAfterWrite(10, TimeUnit.MINUTES)
-                .build();
-
+        if (authcache == null) {
+            //
+            // never keep entries for more than 10 minutes
+            // so a user can re-gain access e.g. after changing his/her password
+            //
+            authcache = CacheBuilder.newBuilder()
+                    .expireAfterAccess(5, TimeUnit.MINUTES)
+                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                    .build();
+        }
     }
 
     @Override

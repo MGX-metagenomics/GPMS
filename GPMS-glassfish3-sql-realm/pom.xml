@@ -61,6 +61,11 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
+                <!--
+                    before updating this plugin, make sure the new version
+                    does NOT add google appengine to the manifest imports!
+                -->
+                <version>3.5.1</version>
                 <executions>
                     <execution>
                         <goals>

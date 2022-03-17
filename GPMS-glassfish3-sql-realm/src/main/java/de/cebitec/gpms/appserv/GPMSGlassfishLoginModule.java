@@ -16,17 +16,19 @@ import javax.security.auth.login.LoginException;
 public final class GPMSGlassfishLoginModule extends AppservPasswordLoginModule {
 
     private static final Logger LOG = Logger.getLogger("de.cebitec.gpms.appserv");
-    private Cache<UserI, String[]> authcache = null;
+    private static Cache<UserI, String[]> authcache = null;
 
     public GPMSGlassfishLoginModule() {
-        //
-        // never keep entries for more than 10 minutes
-        // so a user can re-gain access e.g. after changing his/her password
-        //
-        authcache = CacheBuilder.newBuilder()
-                .expireAfterAccess(5, TimeUnit.MINUTES)
-                .expireAfterWrite(10, TimeUnit.MINUTES)
-                .build();
+        if (authcache == null) {
+            //
+            // never keep entries for more than 10 minutes
+            // so a user can re-gain access e.g. after changing his/her password
+            //
+            authcache = CacheBuilder.newBuilder()
+                    .expireAfterAccess(5, TimeUnit.MINUTES)
+                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                    .build();
+        }
     }
 
     @Override
@@ -38,7 +40,7 @@ public final class GPMSGlassfishLoginModule extends AppservPasswordLoginModule {
         }
 
         GPMSGlassfishRealm gpmsrealm = (GPMSGlassfishRealm) _currentRealm;
-        
+
         final UserI curUser = new de.cebitec.gpms.model.User(_username, new String(_passwd));
 
         String[] grpList = authcache.getIfPresent(curUser);

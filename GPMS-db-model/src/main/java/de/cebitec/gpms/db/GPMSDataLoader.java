@@ -19,9 +19,9 @@ import de.cebitec.gpms.db.sql.DatasourceProvider;
 import de.cebitec.gpms.util.EMFNameResolver;
 import de.cebitec.gpms.util.GPMSDataSourceSelector;
 import de.cebitec.gpms.util.GPMSManagedDataSourceI;
-import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import de.cebitec.gpms.util.DataSourceProviderI;
+import jakarta.persistence.EntityManagerFactory;
 
 /**
  *

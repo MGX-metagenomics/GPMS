@@ -4,7 +4,7 @@ import de.cebitec.gpms.core.DataSource_DBI;
 import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.data.JPAMasterI;
 import de.cebitec.gpms.util.GPMSManagedDataSourceI;
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManagerFactory;
 
 /**
  *

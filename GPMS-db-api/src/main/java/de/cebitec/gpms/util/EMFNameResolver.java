@@ -1,11 +1,11 @@
 package de.cebitec.gpms.util;
 
 import de.cebitec.gpms.core.MembershipI;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 
 /**
  * A EMFNameResolver can be implemented as a service. It is used to load a persistenceunit

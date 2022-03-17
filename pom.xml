@@ -53,6 +53,7 @@
         <java.src.version>1.8</java.src.version>
         <java.target.version>1.8</java.target.version>
         <brandingToken>gpms</brandingToken>
+        <eeapi.version>9.1.0</eeapi.version>
     </properties>
     
     <modules>

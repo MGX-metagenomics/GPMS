@@ -18,18 +18,22 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>3.10.1</version>
                 <configuration>
                     <compilerArgument>-Xlint:all</compilerArgument>
-                    <source>1.7</source>
-                    <target>1.7</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>5.1.8</version>
+                <extensions>true</extensions>
             </plugin>
         </plugins>
     </build>
     
     <properties>
-        <netbeans.version>RELEASE124</netbeans.version>
+        <netbeans.version>RELEASE150</netbeans.version>
         <brandingToken>gpms</brandingToken>
     </properties>
     

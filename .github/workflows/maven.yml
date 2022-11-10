@@ -29,5 +29,12 @@ jobs:
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-mgx-cache
+    - name: Build 'utilities'
+      run: |
+        git clone -b utilities_2_0 https://github.com/MGX-metagenomics/utilities.git
+        cd utilities
+        mvn clean install -DskipTests=true
+        cd ..
+        rm -rf utilities
     - name: Build with Maven
       run: mvn -B package --file pom.xml

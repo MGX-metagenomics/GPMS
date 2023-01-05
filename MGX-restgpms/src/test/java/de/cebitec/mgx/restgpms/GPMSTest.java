@@ -20,9 +20,14 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
-import org.junit.Test;
-import static org.junit.Assert.*;
-import org.junit.Assume;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -54,7 +59,6 @@ public class GPMSTest {
 //                bundle("reference:file:target/classes")
 //        );
 //    }
-
     @Test
     public void getProjectClassesLoggedOut() {
         System.out.println("getProjectClassesLoggedOut");
@@ -99,9 +103,9 @@ public class GPMSTest {
             assertEquals(3, pc.getRoles().size()); // user, admin, guest
             cnt++;
         }
-        
+
         gpms.logout();
-        
+
         assertEquals(2, cnt); // MGX and MGX2
     }
 
@@ -128,9 +132,9 @@ public class GPMSTest {
             }
             cnt++;
         }
-        
+
         gpms.logout();
-        
+
         assertEquals(2, cnt);
 
         assertNotNull(restDS);
@@ -196,7 +200,7 @@ public class GPMSTest {
         }
         assertTrue(result);
         gpms.logout();
-        
+
     }
 
     @Test
@@ -207,20 +211,20 @@ public class GPMSTest {
         boolean result = false;
         final GPMSClientI gpms = TestMaster.get();
         assertFalse(gpms.loggedIn());
-        
+
         try {
             result = gpms.login(login, password);
         } catch (GPMSException ex) {
             fail(ex.getMessage());
-        
+
         }
         assertTrue(result);
         assertTrue(gpms.loggedIn());
-        
+
         gpms.addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
-                assertFalse((Boolean)evt.getNewValue());
+                assertFalse((Boolean) evt.getNewValue());
                 assertFalse(gpms.loggedIn());
             }
         });
@@ -237,7 +241,7 @@ public class GPMSTest {
 
         String config = System.getProperty("user.home") + "/.m2/mgx.junit";
         File f = new File(config);
-        Assume.assumeTrue(f.exists() && f.canRead());
+        assumeTrue(f.exists() && f.canRead());
         Properties p = new Properties();
         try {
             p.load(new FileInputStream(f));
@@ -246,10 +250,10 @@ public class GPMSTest {
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
-        Assume.assumeNotNull(login);
-        Assume.assumeNotNull(password);
+        assumeTrue(login != null);
+        assumeTrue(password != null);
         System.out.println("  using credentials for login " + login);
-        
+
         GPMSClientI gpms = TestMaster.get();
         boolean result = false;
         try {
@@ -257,9 +261,9 @@ public class GPMSTest {
         } catch (GPMSException ex) {
             fail(ex.getMessage());
         }
-        
+
         gpms.logout();
-        
+
         assertTrue(result);
     }
 
@@ -295,9 +299,9 @@ public class GPMSTest {
         GPMSClientI gpms = TestMaster.get();
         assertNotNull(gpms);
         assertFalse(gpms.loggedIn());
-        
+
         gpms.logout();
-        
+
         boolean result = false;
         try {
             result = gpms.login(login, password);
@@ -330,7 +334,7 @@ public class GPMSTest {
                 fail(ex.getMessage());
             }
         }
-        
+
         assertFalse(gpms.loggedIn());
     }
 
@@ -371,7 +375,7 @@ public class GPMSTest {
         if (projNames.endsWith(", ")) {
             projNames = projNames.substring(0, projNames.length() - 2);
         }
-        assertEquals("mgx_unittestRO should only be a member of \'MGX_Unittest\', actual project list: " + projNames, 2, cnt);
+        assertEquals(2, cnt, "mgx_unittestRO should only be a member of \'MGX_Unittest\', actual project list: " + projNames);
         gpms.logout();
     }
 

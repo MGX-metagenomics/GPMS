@@ -5,13 +5,11 @@
  */
 package de.cebitec.gpms.model;
 
-import de.cebitec.gpms.model.ProjectClass;
-import de.cebitec.gpms.model.Role;
 import de.cebitec.gpms.core.ProjectClassI;
 import de.cebitec.gpms.core.RoleI;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  *

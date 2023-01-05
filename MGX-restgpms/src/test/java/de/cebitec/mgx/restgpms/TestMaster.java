@@ -8,8 +8,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Properties;
-import static org.junit.Assert.fail;
-import org.junit.Assume;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  *
@@ -33,7 +34,7 @@ public class TestMaster {
             }
         }
 
-        Assume.assumeNotNull(serverURI);
+        assumeTrue(serverURI != null);
         try {
             URL myURL = new URL(serverURI);
             URLConnection myURLConnection = myURL.openConnection();
@@ -41,7 +42,7 @@ public class TestMaster {
         } catch (MalformedURLException e) {
             fail("Invalid URL");
         } catch (IOException e) {
-            Assume.assumeFalse("Could not connect to "+serverURI, true);
+            assumeFalse(true, "Could not connect to " + serverURI);
         }
 
         GPMSClientI gpms = null;

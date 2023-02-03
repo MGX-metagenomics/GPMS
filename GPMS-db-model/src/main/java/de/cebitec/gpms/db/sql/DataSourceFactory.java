@@ -3,6 +3,7 @@ package de.cebitec.gpms.db.sql;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import de.cebitec.gpms.core.DataSource_DBI;
+import de.cebitec.gpms.core.GPMSException;
 import de.cebitec.gpms.core.MembershipI;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -14,7 +15,7 @@ import java.sql.SQLException;
  */
 public class DataSourceFactory {
 
-    public static HikariDataSource createDataSource(MembershipI m, DataSource_DBI projectGPMSDS, String dbUser, String dbPassword) {
+    public static HikariDataSource createDataSource(MembershipI m, DataSource_DBI projectGPMSDS, String dbUser, String dbPassword) throws GPMSException {
 
         if (dbUser == null || dbPassword == null) {
             throw new IllegalArgumentException("dbUser and dbPassword must not be null.");
@@ -26,23 +27,28 @@ public class DataSourceFactory {
                 .append(m.getRole().getName())
                 .toString();
 
-        HikariConfig cfg = new HikariConfig();
-        cfg.setPoolName(poolname);
-        //cfg.setMinimumPoolSize(5);
-        cfg.setMaximumPoolSize(50);
-        cfg.setMinimumIdle(2);
-        cfg.setDataSourceClassName("org.postgresql.ds.PGSimpleDataSource");
-        cfg.addDataSourceProperty("user", dbUser);
-        cfg.addDataSourceProperty("password", dbPassword);
-        cfg.addDataSourceProperty("serverName", projectGPMSDS.getHost().getHostName());
-        cfg.addDataSourceProperty("portNumber", projectGPMSDS.getHost().getPort());
-        cfg.addDataSourceProperty("databaseName", projectGPMSDS.getName());
-        cfg.setConnectionTimeout(1000 * 20); // ms
-        cfg.setMaxLifetime(1000 * 60 * 2);  // 2 mins
-        cfg.setIdleTimeout(1000 * 60);
-        cfg.setLeakDetectionThreshold(60000); // 60 sec before in-use connection is considered leaked
-
-        return new HikariDataSource(cfg);
+        try {
+            HikariConfig cfg = new HikariConfig();
+            cfg.setPoolName(poolname);
+            //cfg.setMinimumPoolSize(5);
+            cfg.setMaximumPoolSize(25);
+            cfg.setMinimumIdle(2);
+            cfg.setDataSourceClassName("org.postgresql.ds.PGSimpleDataSource");
+            cfg.addDataSourceProperty("user", dbUser);
+            cfg.addDataSourceProperty("password", dbPassword);
+            cfg.addDataSourceProperty("serverName", projectGPMSDS.getHost().getHostName());
+            cfg.addDataSourceProperty("portNumber", projectGPMSDS.getHost().getPort());
+            cfg.addDataSourceProperty("databaseName", projectGPMSDS.getName());
+            cfg.setConnectionTimeout(1500); // ms
+            cfg.setMaxLifetime(1000 * 60 * 2);  // 2 mins
+            cfg.setIdleTimeout(1000 * 60);
+            cfg.setLeakDetectionThreshold(60000); // 60 sec before in-use connection is considered leaked
+            return new HikariDataSource(cfg);
+        } catch (Exception ex) {
+            throw new GPMSException("Unable to create JDBC connection pool for database "
+                    + projectGPMSDS.getName() + " with host " + projectGPMSDS.getHost().getHostName()
+                    + ":" + projectGPMSDS.getHost().getPort(), ex);
+        }
     }
 
     public static Connection createConnection(DataSource_DBI projectGPMSDS, String dbUser, String dbPassword) throws SQLException {

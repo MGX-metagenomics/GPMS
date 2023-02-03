@@ -130,7 +130,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         if (ldapPool != null) {
             return;
         }
-        
+
         // setup ldap connection pool
         RoundRobinServerSet serverSet = new RoundRobinServerSet(
                 new String[]{
@@ -407,12 +407,26 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
                             // load host
                             //
                             final String hostDN = dsEntry.getAttributeValue(ATTR_GPMSHOST);
+                            if (hostDN == null) {
+                                throw new GPMSException("gpmsDataSourceDB " + dsName + " has no gpmsHost attribute.");
+                            }
                             HostI host = host_cache.get(hostDN, new Callable<HostI>() {
 
                                 @Override
                                 public HostI call() throws Exception {
                                     SearchResultEntry hostEntry = conn.getEntry(hostDN, ATTR_HOSTNAME, ATTR_HOSTPORT);
-                                    return new GPMSHost(hostEntry.getAttributeValue(ATTR_HOSTNAME), hostEntry.getAttributeValueAsInteger(ATTR_HOSTPORT));
+                                    if (hostEntry == null) {
+                                        throw new GPMSException("Unable to obtain host " + hostDN);
+                                    }
+                                    String hostName = hostEntry.getAttributeValue(ATTR_HOSTNAME);
+                                    if (hostName == null) {
+                                        throw new GPMSException(hostDN + " has no gpmsHostName attribute.");
+                                    }
+                                    Integer hostPost = hostEntry.getAttributeValueAsInteger(ATTR_HOSTPORT);
+                                    if (hostPost == null) {
+                                        throw new GPMSException(hostDN + " has no gpmsPort attribute.");
+                                    }
+                                    return new GPMSHost(hostName, hostPost);
                                 }
                             });
 
@@ -502,7 +516,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
         if (pClass == null || pClass.getName() == null || pClass.getName().isEmpty()) {
             throw new GPMSException("Unable to load roles for null/empty project class.");
         }
-        
+
         String cfgFileName = new StringBuilder(config != null ? config.getGPMSConfigDirectory() : "")
                 .append(File.separator).append(pClass.getName().toLowerCase()).append(".conf").toString();
         File cfgFile = new File(cfgFileName);
@@ -519,7 +533,7 @@ public class LDAPDataLoader extends GPMSDataLoader implements GPMSDataLoaderI {
 
         String line;
         boolean in_section = false;
-        try (BufferedReader br = new BufferedReader(new FileReader(cfgFileName))) {
+        try ( BufferedReader br = new BufferedReader(new FileReader(cfgFileName))) {
             while ((line = br.readLine()) != null) {
                 if (line.contains("<Role_Accounts>")) {
                     in_section = true;

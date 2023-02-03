@@ -21,5 +21,9 @@ public class GPMSException extends Exception {
     public GPMSException(Throwable cause) {
         super(cause);
     }
+
+    public GPMSException(String message, Throwable cause) {
+        super(message, cause);
+    }
     
 }

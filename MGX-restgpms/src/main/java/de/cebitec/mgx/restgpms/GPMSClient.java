@@ -30,6 +30,7 @@ import de.cebitec.gpms.model.User;
 import de.cebitec.gpms.rest.GPMSClientI;
 import de.cebitec.gpms.rest.RESTMasterI;
 import static de.cebitec.mgx.restgpms.JAXRSRESTAccess.PROTOBUF_TYPE;
+import jakarta.ws.rs.NotFoundException;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.UnsupportedEncodingException;
@@ -488,6 +489,10 @@ public class GPMSClient implements GPMSClientI {
             } else if (ex.getCause() != null && ex.getCause() instanceof UnknownHostException) {
                 return -1;
             }
+        } catch (NotFoundException nfe) {
+            // happens e.g. during server restart when the application is not yet
+            // deployed; silently ignore
+            return -1;
         }
         return -1;
     }

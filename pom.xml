@@ -21,8 +21,9 @@
                 <version>3.11.0</version>
                 <configuration>
                     <compilerArgument>-Xlint:all</compilerArgument>
-                    <source>${java.src.version}</source>
-                    <target>${java.target.version}</target>
+                    <source>15</source>
+                    <release>15</release>
+                    <target>15</target>
                 </configuration>
             </plugin>
             <plugin>

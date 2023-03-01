@@ -5,11 +5,16 @@
  */
 package de.cebitec.gpms.rest;
 
+import java.io.Serial;
+
 /**
  *
  * @author sjaenick
  */
 public class RESTException extends Exception {
+
+    @Serial
+    private static final long serialVersionUID = 6401253773779951803L;
 
     public RESTException(String message) {
         super(message);
@@ -18,5 +23,5 @@ public class RESTException extends Exception {
     public RESTException(Throwable cause) {
         super(cause);
     }
-    
+
 }

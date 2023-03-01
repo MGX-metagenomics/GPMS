@@ -7,6 +7,7 @@ package de.cebitec.gpms.actions;
 
 import de.cebitec.gpms.rest.GPMSClientI;
 import java.awt.event.ActionEvent;
+import java.io.Serial;
 import javax.swing.AbstractAction;
 import org.openide.util.Utilities;
 
@@ -15,6 +16,9 @@ import org.openide.util.Utilities;
  * @author sjaenick
  */
 public class DisconnectAction extends AbstractAction {
+
+    @Serial
+    private static final long serialVersionUID = 6401253773779951803L;
 
     public DisconnectAction() {
         putValue(NAME, "Disconnect");

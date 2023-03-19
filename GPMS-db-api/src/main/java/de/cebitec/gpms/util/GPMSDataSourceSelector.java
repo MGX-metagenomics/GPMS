@@ -10,8 +10,8 @@ import de.cebitec.gpms.core.GPMSException;
 import de.cebitec.gpms.core.MasterI;
 import de.cebitec.gpms.core.MembershipI;
 import de.cebitec.gpms.core.ProjectClassI;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,15 +23,15 @@ public abstract class GPMSDataSourceSelector {
 
     public abstract <T extends MasterI> DataSourceI selectFromDataSources(MembershipI mbr, Class<T> masterClass) throws GPMSException;
 
-    private final static Map<String, GPMSDataSourceSelector> selectors = new HashMap<>();
-    private static final Logger LOG = Logger.getLogger(GPMSDataSourceSelector.class.getName());
+    private final static ConcurrentMap<String, GPMSDataSourceSelector> selectors = new ConcurrentHashMap<>();
+    protected static final Logger LOG = Logger.getLogger(GPMSDataSourceSelector.class.getName());
 
     public final static void registerSelector(String pClass, GPMSDataSourceSelector sel) {
         LOG.log(Level.INFO, "Registered DataSource selector for project class {0}", pClass);
         selectors.put(pClass, sel);
     }
 
-    public final static void unregisterSelector(String pClass, GPMSDataSourceSelector sel) {
+    public final static void unregisterSelector(String pClass) {
         selectors.remove(pClass);
     }
 

@@ -20,7 +20,7 @@ public class TestMaster {
 
     public static GPMSClientI get() {
 
-        String serverURI = "https://mgx-test.computational.bio.uni-giessen.de/MGX-maven-web/webresources/";
+        String serverURI = "https://mgx-test.computational.bio.uni-giessen.de/MGX-rest/webresources/";
 
         String config = System.getProperty("user.home") + "/.m2/gpms.junit";
         File f = new File(config);

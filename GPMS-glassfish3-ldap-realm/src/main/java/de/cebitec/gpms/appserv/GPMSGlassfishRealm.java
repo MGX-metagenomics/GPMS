@@ -173,15 +173,15 @@ public class GPMSGlassfishRealm extends AppservRealm {
         return "gpms";
     }
 
-    private final static Enumeration grpNames = Collections.enumeration(Arrays.asList("gpmsuser"));
+    private final static Enumeration<String> grpNames = Collections.enumeration(Arrays.asList("gpmsuser"));
 
     @Override
-    public Enumeration getGroupNames(String username) throws InvalidOperationException, NoSuchUserException {
+    public Enumeration<String> getGroupNames(String username) throws InvalidOperationException, NoSuchUserException {
         return grpNames;
     }
 
     @Override
-    public Enumeration getGroupNames() throws BadRealmException {
+    public Enumeration<String> getGroupNames() throws BadRealmException {
         return grpNames;
     }
 

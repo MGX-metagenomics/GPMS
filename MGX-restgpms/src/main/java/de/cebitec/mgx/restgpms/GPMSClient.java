@@ -58,10 +58,12 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import static javax.ws.rs.core.Response.Status.GATEWAY_TIMEOUT;
 import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
+import org.apache.http.HttpHost;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
@@ -85,6 +87,8 @@ public class GPMSClient implements GPMSClientI {
     private boolean loggedin = false;
     private boolean validateSSL = true;
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+    //
+    private static final Logger LOG = Logger.getLogger(GPMSClient.class.getName());
 
     private final static DataSourceTypeI REST_DSTYPE = new DataSourceTypeI() {
         @Override
@@ -314,7 +318,13 @@ public class GPMSClient implements GPMSClientI {
             return false;
         }
 
+        String pacURL = System.getProperty("systemPAC"); //set by netbeans platform
+        if (pacURL != null) {
+            throw new GPMSException("Proxy autoconfiguration is currently unsupported. Please configure your proxy manually.");
+        }
+
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        HttpClientBuilder httpClientBuilder;
         CloseableHttpClient httpClient;
         if (!validateSSL) {
             SSLContext sslContext = null;
@@ -330,13 +340,27 @@ public class GPMSClient implements GPMSClientI {
             HostnameVerifier allowAllHosts = new NoopHostnameVerifier();
             SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts);
 
-            httpClient = HttpClients
+            httpClientBuilder = HttpClients
                     .custom()
-                    .setSSLSocketFactory(connectionFactory)
-                    .build();
+                    .setSSLSocketFactory(connectionFactory);
         } else {
-            httpClient = HttpClients.custom().setConnectionManager(cm).build();
+            httpClientBuilder = HttpClients.custom().setConnectionManager(cm);
         }
+
+        //
+        // obtain proxy info, if required
+        //
+        String proxyHost = System.getProperty("http.proxyHost");
+        String proxyPort = System.getProperty("http.proxyPort");
+        proxyHost = proxyHost != null ? proxyHost : System.getProperty("https.proxyHost");
+        proxyPort = proxyPort != null ? proxyPort : System.getProperty("https.proxyPort");
+        if (proxyHost != null && proxyPort != null) {
+            HttpHost proxy = new HttpHost(proxyHost, Integer.parseInt(proxyPort));
+            httpClientBuilder = httpClientBuilder.setProxy(proxy);
+        }
+
+        httpClient = httpClientBuilder.build();
+
         cm.setMaxTotal(200); // Increase max total connection to 200
         cm.setDefaultMaxPerRoute(20); // Increase default max connection per route to 20
 
@@ -354,6 +378,15 @@ public class GPMSClient implements GPMSClientI {
         ResteasyClientBuilder cb = ((ResteasyClientBuilder) ClientBuilder
                 .newBuilder())
                 .httpEngine(engine);
+
+        // set proxy, if required
+        if (proxyHost != null && proxyPort != null) {
+            LOG.log(Level.INFO, "HTTP proxy set to {0}:{1}", new Object[]{proxyHost, proxyPort});
+            cb = cb.defaultProxy(proxyHost, Integer.parseInt(proxyPort), "http");
+            cb = cb.defaultProxy(proxyHost, Integer.parseInt(proxyPort), "https");
+        } else {
+            LOG.info("NOT USING A PROXY SERVER");
+        }
 
         if (!validateSSL) {
             client = cb
@@ -452,7 +485,7 @@ public class GPMSClient implements GPMSClientI {
         if (!loggedIn()) {
             return -1;
         }
-        
+
         try {
             Invocation.Builder wr = getResource("GPMS", "GPMSBean", "ping");
             if (wr == null) { // e.g. after logging out

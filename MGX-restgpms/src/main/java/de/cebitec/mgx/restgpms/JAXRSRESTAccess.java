@@ -34,12 +34,14 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
+import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
@@ -60,6 +62,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
     private final WebTarget wt;
     private final int numRetriesAllowed = 5;
     private volatile boolean closed = false;
+    private static final Logger LOG = Logger.getLogger(JAXRSRESTAccess.class.getName());
 
     public JAXRSRESTAccess(UserI user, URI appServerURI, boolean verifySSL, Class... serializers) {
 
@@ -76,6 +79,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
                 .setSocketTimeout(300 * 1000)
                 .build();
 
+        HttpClientBuilder httpClientBuilder;
         CloseableHttpClient httpClient;
         if (!verifySSL) {
             SSLContext sslContext = null;
@@ -91,19 +95,30 @@ public class JAXRSRESTAccess implements RESTAccessI {
             HostnameVerifier allowAllHosts = new NoopHostnameVerifier();
             SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts);
 
-            httpClient = HttpClients
+            httpClientBuilder = HttpClients
                     .custom()
                     .setConnectionManager(cm)
                     .setSSLSocketFactory(connectionFactory)
-                    .setDefaultRequestConfig(defaultRequestConfig)
-                    .build();
+                    .setDefaultRequestConfig(defaultRequestConfig);
         } else {
-            httpClient = HttpClients
+            httpClientBuilder = HttpClients
                     .custom()
                     .setConnectionManager(cm)
-                    .setDefaultRequestConfig(defaultRequestConfig)
-                    .build();
+                    .setDefaultRequestConfig(defaultRequestConfig);
         }
+
+        // set proxy, if required
+        String proxyHost = System.getProperty("http.proxyHost");
+        String proxyPort = System.getProperty("http.proxyPort");
+        proxyHost = proxyHost != null ? proxyHost : System.getProperty("https.proxyHost");
+        proxyPort = proxyPort != null ? proxyPort : System.getProperty("https.proxyPort");
+        if (proxyHost != null && proxyPort != null) {
+            HttpHost proxy = new HttpHost(proxyHost, Integer.parseInt(proxyPort));
+            httpClientBuilder = httpClientBuilder.setProxy(proxy);
+        }
+
+        httpClient = httpClientBuilder.build();
+
         cm.setMaxTotal(200); // Increase max total connection to 200
         cm.setDefaultMaxPerRoute(30); // Increase default max connection per route to 20
         engine = new ApacheHttpClient43Engine(httpClient);
@@ -115,6 +130,13 @@ public class JAXRSRESTAccess implements RESTAccessI {
 
         for (Class clazz : serializers) {
             cb.register(clazz);
+        }
+
+        // set proxy, if required
+        if (proxyHost != null && proxyPort != null) {
+            //LOG.log(Level.INFO, "HTTP proxy set to {0}:{1} for {2}", new Object[]{proxyHost, proxyPort, appServerURI});
+            cb = cb.defaultProxy(proxyHost, Integer.parseInt(proxyPort), "http");
+            cb = cb.defaultProxy(proxyHost, Integer.parseInt(proxyPort), "https");
         }
 
         cb.connectTimeout(10000, TimeUnit.MILLISECONDS);
@@ -361,7 +383,6 @@ public class JAXRSRESTAccess implements RESTAccessI {
 //        Future<Response> res = buildPath.async().get();
 //        return new AsyncRequestHandle(res);
 //    }
-
     @Override
     public <U> U post(Object obj, Class<U> targetClass, String... path) throws RESTException {
         Invocation.Builder buildPath = buildPath(path);

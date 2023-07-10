@@ -64,7 +64,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
     private volatile boolean closed = false;
     private static final Logger LOG = Logger.getLogger(JAXRSRESTAccess.class.getName());
 
-    public JAXRSRESTAccess(UserI user, URI appServerURI, boolean verifySSL, Class... serializers) {
+    public JAXRSRESTAccess(UserI user, URI appServerURI, boolean verifySSL, Class<?>... serializers) {
 
         SocketConfig socketConfig = SocketConfig.custom()
                 .setTcpNoDelay(true)
@@ -129,7 +129,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
                 //.useAsyncHttpEngine()
                 .httpEngine(engine);
 
-        for (Class clazz : serializers) {
+        for (Class<?> clazz : serializers) {
             cb.register(clazz);
         }
 

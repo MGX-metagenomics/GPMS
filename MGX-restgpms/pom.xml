@@ -44,6 +44,7 @@
                             org.jboss.resteasy.client.jaxrs,
                             org.jboss.resteasy.client.jaxrs.engines,
                             org.jboss.resteasy.client.jaxrs.internal,
+                            org.apache.http,
                             org.apache.http.impl.client,
                             org.apache.http.impl.conn,
                             org.apache.http.ssl,

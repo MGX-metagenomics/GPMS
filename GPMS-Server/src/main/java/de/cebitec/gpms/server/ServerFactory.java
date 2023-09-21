@@ -50,7 +50,7 @@ public class ServerFactory {
             try {
                 //data.add(GPMSClientFactory.createClient("CeBiTec", "https://mgx.cebitec.uni-bielefeld.de/MGX-maven-web/webresources/", true));
                 //data.add(GPMSClientFactory.createClient("JLU", "https://mgx.computational.bio.uni-giessen.de/MGX-maven-web/webresources/", true));
-                data.add(GPMSClientFactory.createClient("JLU", "https://mgx-test.computational.bio.uni-giessen.de/MGX-rest/webresources/", false));
+                data.add(GPMSClientFactory.createClient("JLU", "https://mgx2.computational.bio.uni-giessen.de/MGX-rest/webresources/", true));
             } catch (GPMSException ex) {
                 Exceptions.printStackTrace(ex);
             }

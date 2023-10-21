@@ -46,15 +46,6 @@
             <artifactId>GPMS-db-model</artifactId>
             <version>${project.version}</version>
         </dependency>
-        
-        <!--
-        <dependency>
-            <groupId>javax</groupId>
-            <artifactId>javaee-api</artifactId>
-            <version>8.0.1</version>
-            <scope>provided</scope>
-        </dependency>
-        -->
         <dependency>
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-api</artifactId>
@@ -64,7 +55,7 @@
         <dependency>
             <groupId>com.unboundid</groupId>
             <artifactId>unboundid-ldapsdk</artifactId>
-            <version>6.0.9</version>
+            <version>6.0.10</version>
         </dependency>
     </dependencies>
     

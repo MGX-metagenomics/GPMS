@@ -71,6 +71,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
+import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
 import org.jboss.resteasy.client.jaxrs.internal.BasicAuthentication;
@@ -82,7 +83,7 @@ import org.jboss.resteasy.client.jaxrs.internal.BasicAuthentication;
 public class GPMSClient implements GPMSClientI {
 
     //private final ClientConfig cc;
-    private ApacheHttpClient43Engine engine;
+    private ClientHttpEngine engine;
     private Client client;
     private WebTarget wt;
     private final String gpmsBaseURI;

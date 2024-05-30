@@ -45,6 +45,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
+import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
 import org.jboss.resteasy.client.jaxrs.internal.BasicAuthentication;
@@ -58,7 +59,7 @@ public class JAXRSRESTAccess implements RESTAccessI {
     public final static String PROTOBUF_TYPE = "application/x-protobuf";
 
     private final Client client;
-    private final ApacheHttpClient43Engine engine;
+    private final ClientHttpEngine engine;
     private final WebTarget wt;
     private final int numRetriesAllowed = 5;
     private volatile boolean closed = false;
